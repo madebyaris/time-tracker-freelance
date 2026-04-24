@@ -1,0 +1,36 @@
+{
+  "name": "@ttf/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./sqlite": "./src/sqlite/index.ts",
+    "./postgres": "./src/postgres/index.ts",
+    "./postgres/schema": "./src/postgres/schema.ts",
+    "./d1": "./src/d1/index.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.json --emitDeclarationOnly",
+    "generate:sqlite": "drizzle-kit generate --config drizzle.sqlite.config.ts",
+    "generate:postgres": "drizzle-kit generate --config drizzle.postgres.config.ts",
+    "migrate:postgres": "tsx ./src/postgres/migrate.ts",
+    "studio:sqlite": "drizzle-kit studio --config drizzle.sqlite.config.ts",
+    "studio:postgres": "drizzle-kit studio --config drizzle.postgres.config.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.36.4",
+    "nanoid": "^5.0.9",
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "drizzle-kit": "^0.28.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

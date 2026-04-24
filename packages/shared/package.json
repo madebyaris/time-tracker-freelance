@@ -1,0 +1,26 @@
+{
+  "name": "@ttf/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./sync": "./src/sync.ts",
+    "./time": "./src/time.ts",
+    "./money": "./src/money.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.json --emitDeclarationOnly"
+  },
+  "dependencies": {
+    "zod": "^3.23.8",
+    "date-fns": "^4.1.0",
+    "nanoid": "^5.0.9"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": {
+    "subagentStop": [
+      {
+        "command": "echo \"[SDD] $(date -u +%Y-%m-%dT%H:%M:%SZ) | Subagent: $SUBAGENT_NAME | Task: ${TASK_ID:-unknown} | Status: completed\" >> specs/active/.subagent-log.txt",
+        "matcher": "sdd-.*"
+      }
+    ],
+    "stop": [
+      {
+        "command": "echo \"[SDD] Session ended at $(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> specs/active/.session-log.txt"
+      }
+    ]
+  }
+}

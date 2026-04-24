@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  /* Keep the default 16px root so Tailwind's text-xs (12px) / text-sm (14px) /
+     text-base (16px) scale matches shadcn/Linear/Things conventions. */
+  color-scheme: light dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #fafafa;
+  color: #18181b;
+  font-size: 0.875rem; /* 14px body text — Tailwind text-sm */
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #09090b;
+    color: #f4f4f5;
+  }
+}
+
+/* Panel (tray popover) window: transparent so the rounded card shows on top.
+   bg-transparent class on <body> in panel.html overrides the rules above. */
+body.bg-transparent,
+body.bg-transparent #root {
+  background: transparent !important;
+}
+
+#root {
+  isolation: isolate;
+}
+
+.titlebar-drag {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.titlebar-no-drag {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.traffic-light-spacer {
+  width: 76px;
+  flex-shrink: 0;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(113, 113, 122, 0.3) transparent;
+}
+
+::selection {
+  background: rgb(228 228 231);
+  color: rgb(24 24 27);
+}
+
+@media (prefers-color-scheme: dark) {
+  ::selection {
+    background: rgb(63 63 70);
+    color: rgb(244 244 245);
+  }
+}

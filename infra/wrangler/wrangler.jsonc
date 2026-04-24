@@ -1,0 +1,11 @@
+{
+  "name": "ttf-api",
+  "main": "../../apps/api/src/worker.ts",
+  "compatibility_date": "2025-01-01",
+  "vars": { "CORS_ORIGIN": "*" },
+  // After creating a D1 database: `wrangler d1 create ttf` then paste id here.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "ttf", "database_id": "REPLACE_WITH_D1_ID" }
+  ],
+  "triggers": { "crons": ["0 4 * * *"] }
+}

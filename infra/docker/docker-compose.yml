@@ -1,0 +1,20 @@
+# Postgres for local / self-hosted API. Run the API on the host:
+#   export DATABASE_URL=postgres://postgres:postgres@localhost:5432/timetracker
+#   pnpm --filter @ttf/api dev
+#
+# Or use a cloud Postgres URL the same way.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: timetracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - ttf-pgdata:/var/lib/postgresql/data
+
+volumes:
+  ttf-pgdata:

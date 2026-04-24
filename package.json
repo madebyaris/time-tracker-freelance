@@ -1,0 +1,40 @@
+{
+  "name": "time-tracker-freelance",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Indie freelancer time tracker — local-first macOS app with optional self-hostable backend",
+  "packageManager": "pnpm@10.30.3",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules .turbo",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,css,html}\" --ignore-path .gitignore",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,css,html}\" --ignore-path .gitignore",
+    "desktop": "pnpm --filter @ttf/desktop tauri:dev",
+    "desktop:web": "pnpm --filter @ttf/desktop dev",
+    "desktop:build": "pnpm --filter @ttf/desktop tauri:build",
+    "web": "pnpm --filter @ttf/web dev",
+    "web:build": "pnpm --filter @ttf/web build",
+    "api": "pnpm --filter @ttf/api dev",
+    "api:build": "pnpm --filter @ttf/api build",
+    "db:generate:pg": "pnpm --filter @ttf/db generate:postgres",
+    "db:generate:sqlite": "pnpm --filter @ttf/db generate:sqlite",
+    "db:migrate:pg": "pnpm --filter @ttf/db migrate:postgres",
+    "db:studio:pg": "pnpm --filter @ttf/db studio:postgres",
+    "db:up": "docker compose -f infra/docker/docker-compose.yml up -d",
+    "db:down": "docker compose -f infra/docker/docker-compose.yml down",
+    "db:logs": "docker compose -f infra/docker/docker-compose.yml logs -f",
+    "cf:deploy": "pnpm --filter @ttf/api cf:deploy"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0",
+    "typescript": "^5.6.3",
+    "prettier": "^3.3.3"
+  }
+}

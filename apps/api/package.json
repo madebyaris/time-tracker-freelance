@@ -1,0 +1,32 @@
+{
+  "name": "@ttf/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.node.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.node.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "cf:deploy": "wrangler deploy -c ../../infra/wrangler/wrangler.jsonc"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.0",
+    "@ttf/db": "workspace:*",
+    "@ttf/shared": "workspace:*",
+    "bcryptjs": "^2.4.3",
+    "drizzle-orm": "^0.36.4",
+    "hono": "^4.6.3",
+    "jose": "^5.9.4",
+    "nanoid": "^5.0.9",
+    "postgres": "^3.4.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.9.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "wrangler": "^3.99.0"
+  }
+}
