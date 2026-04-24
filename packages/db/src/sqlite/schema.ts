@@ -14,6 +14,13 @@ export const clients = sqliteTable(
     email: text('email'),
     currency: text('currency').notNull().default('USD'),
     notes: text('notes'),
+    // ttf-002: richer client profile
+    logo_data: text('logo_data'), // data:image/webp;base64,… (≤ 64 KB)
+    website: text('website'),
+    phone: text('phone'),
+    address: text('address'),
+    tax_id: text('tax_id'),
+    default_hourly_rate_cents: integer('default_hourly_rate_cents'),
     archived_at: integer('archived_at'),
     updated_at: integer('updated_at').notNull(),
     deleted_at: integer('deleted_at'),
@@ -90,6 +97,11 @@ export const time_entries = sqliteTable(
     client_id: text('client_id').references(() => clients.id),
     started_at: integer('started_at').notNull(),
     ended_at: integer('ended_at'), // null = currently running
+    // ttf-002: real pause semantics. While paused, `paused_at` is set
+    // (entry stays open). On resume, the elapsed pause is folded into
+    // `paused_seconds`. On stop, any active pause is folded too.
+    paused_at: integer('paused_at'),
+    paused_seconds: integer('paused_seconds').notNull().default(0),
     description: text('description'),
     billable: integer('billable', { mode: 'boolean' }).notNull().default(true),
     source: text('source', { enum: ['manual', 'timer', 'pomodoro', 'calendar'] })

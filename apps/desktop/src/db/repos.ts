@@ -10,6 +10,13 @@ export interface Client {
   email: string | null;
   currency: string;
   notes: string | null;
+  // ttf-002: richer client profile
+  logo_data: string | null; // data:image/webp;base64,…
+  website: string | null;
+  phone: string | null;
+  address: string | null;
+  tax_id: string | null;
+  default_hourly_rate_cents: number | null;
   archived_at: number | null;
   updated_at: number;
   deleted_at: number | null;
@@ -36,6 +43,11 @@ export interface TimeEntry {
   client_id: string | null;
   started_at: number;
   ended_at: number | null;
+  // ttf-002: real pause semantics. While paused, `paused_at` is set and the
+  // entry stays open. On resume the elapsed pause is folded into
+  // `paused_seconds`; on stop any active pause is folded too.
+  paused_at: number | null;
+  paused_seconds: number;
   description: string | null;
   billable: number;
   source: 'manual' | 'timer' | 'pomodoro' | 'calendar';
@@ -53,14 +65,42 @@ export const Clients = {
       `SELECT * FROM clients WHERE deleted_at IS NULL ORDER BY archived_at IS NULL DESC, name`,
     );
   },
-  async create(input: { name: string; email?: string | null; currency?: string }): Promise<Client> {
+  async create(input: {
+    name: string;
+    email?: string | null;
+    currency?: string;
+    logo_data?: string | null;
+    website?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    tax_id?: string | null;
+    default_hourly_rate_cents?: number | null;
+    notes?: string | null;
+  }): Promise<Client> {
     const id = nanoid();
     const device_id = await getDeviceId();
     const ts = now();
     await exec(
-      `INSERT INTO clients (id, name, email, currency, updated_at, device_id)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [id, input.name, input.email ?? null, input.currency ?? 'USD', ts, device_id],
+      `INSERT INTO clients (
+         id, name, email, currency, notes,
+         logo_data, website, phone, address, tax_id, default_hourly_rate_cents,
+         updated_at, device_id
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        input.name,
+        input.email ?? null,
+        input.currency ?? 'USD',
+        input.notes ?? null,
+        input.logo_data ?? null,
+        input.website ?? null,
+        input.phone ?? null,
+        input.address ?? null,
+        input.tax_id ?? null,
+        input.default_hourly_rate_cents ?? null,
+        ts,
+        device_id,
+      ],
     );
     return (await this.get(id))!;
   },
@@ -68,7 +108,24 @@ export const Clients = {
     const rows = await query<Client>(`SELECT * FROM clients WHERE id = ?`, [id]);
     return rows[0] ?? null;
   },
-  async update(id: string, patch: Partial<Pick<Client, 'name' | 'email' | 'currency' | 'notes'>>) {
+  async update(
+    id: string,
+    patch: Partial<
+      Pick<
+        Client,
+        | 'name'
+        | 'email'
+        | 'currency'
+        | 'notes'
+        | 'logo_data'
+        | 'website'
+        | 'phone'
+        | 'address'
+        | 'tax_id'
+        | 'default_hourly_rate_cents'
+      >
+    >,
+  ) {
     const sets: string[] = [];
     const vals: unknown[] = [];
     for (const [k, v] of Object.entries(patch)) {
@@ -323,12 +380,38 @@ export const TimeEntries = {
     );
     return (await this.get(id))!;
   },
+  /**
+   * Stop a time entry. If it was paused, the in-progress pause is folded
+   * into `paused_seconds` so the entry's effective duration is correct
+   * regardless of how long it sat paused.
+   */
   async stop(id: string, endedAt: number = now()) {
-    await exec(`UPDATE time_entries SET ended_at = ?, updated_at = ? WHERE id = ?`, [
-      endedAt,
-      now(),
-      id,
-    ]);
+    const entry = await this.get(id);
+    if (!entry) return;
+    const extraPausedMs = entry.paused_at ? Math.max(0, endedAt - entry.paused_at) : 0;
+    const pausedSeconds = entry.paused_seconds + Math.floor(extraPausedMs / 1000);
+    await exec(
+      `UPDATE time_entries SET ended_at = ?, paused_at = NULL, paused_seconds = ?, updated_at = ? WHERE id = ?`,
+      [endedAt, pausedSeconds, now(), id],
+    );
+  },
+  /** Pause the running entry (entry stays open, ended_at remains null). */
+  async pause(id: string, pausedAt: number = now()) {
+    await exec(
+      `UPDATE time_entries SET paused_at = ?, updated_at = ? WHERE id = ? AND ended_at IS NULL AND paused_at IS NULL`,
+      [pausedAt, now(), id],
+    );
+  },
+  /** Resume a paused entry. Folds the elapsed pause into `paused_seconds`. */
+  async resume(id: string, resumedAt: number = now()) {
+    const entry = await this.get(id);
+    if (!entry || entry.paused_at == null) return;
+    const extraPausedMs = Math.max(0, resumedAt - entry.paused_at);
+    const pausedSeconds = entry.paused_seconds + Math.floor(extraPausedMs / 1000);
+    await exec(
+      `UPDATE time_entries SET paused_at = NULL, paused_seconds = ?, updated_at = ? WHERE id = ?`,
+      [pausedSeconds, now(), id],
+    );
   },
   async get(id: string): Promise<TimeEntry | null> {
     const rows = await query<TimeEntry>(`SELECT * FROM time_entries WHERE id = ?`, [id]);

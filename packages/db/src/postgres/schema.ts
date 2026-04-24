@@ -56,6 +56,13 @@ export const clients = pgTable(
     email: text('email'),
     currency: text('currency').notNull().default('USD'),
     notes: text('notes'),
+    // ttf-002: richer client profile
+    logo_data: text('logo_data'),
+    website: text('website'),
+    phone: text('phone'),
+    address: text('address'),
+    tax_id: text('tax_id'),
+    default_hourly_rate_cents: integer('default_hourly_rate_cents'),
     archived_at: bigint('archived_at', { mode: 'number' }),
     updated_at: bigint('updated_at', { mode: 'number' }).notNull(),
     deleted_at: bigint('deleted_at', { mode: 'number' }),
@@ -141,6 +148,9 @@ export const time_entries = pgTable(
     client_id: text('client_id'),
     started_at: bigint('started_at', { mode: 'number' }).notNull(),
     ended_at: bigint('ended_at', { mode: 'number' }),
+    // ttf-002: real pause semantics — see SQLite schema for the wire-up.
+    paused_at: bigint('paused_at', { mode: 'number' }),
+    paused_seconds: integer('paused_seconds').notNull().default(0),
     description: text('description'),
     billable: boolean('billable').notNull().default(true),
     source: entrySourceEnum('source').notNull().default('timer'),

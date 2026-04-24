@@ -1,7 +1,7 @@
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
 import { TimeEntries, Projects, Clients } from '../db/repos';
-import { durationSeconds, formatDuration } from '@ttf/shared';
+import { entryDurationSeconds, formatDuration } from '@ttf/shared';
 
 function escapeCsv(value: unknown): string {
   if (value === null || value === undefined) return '';
@@ -32,7 +32,7 @@ export async function exportEntriesCsv(opts: { from: number; to: number }): Prom
     'source',
   ];
   const rows = entries.map((e) => {
-    const dur = durationSeconds(e.started_at, e.ended_at);
+    const dur = entryDurationSeconds(e);
     const proj = e.project_id ? projById.get(e.project_id) : null;
     const cli = proj?.client_id ? clientById.get(proj.client_id) : null;
     return [

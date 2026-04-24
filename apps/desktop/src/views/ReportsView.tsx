@@ -13,7 +13,7 @@ import {
   YAxis,
 } from 'recharts';
 import { EmptyState, SegmentedControl } from '@ttf/ui';
-import { durationSeconds, formatDuration, formatMoney, startOfDay } from '@ttf/shared';
+import { entryDurationSeconds, formatDuration, formatMoney, startOfDay } from '@ttf/shared';
 import { BarChart3 } from 'lucide-react';
 import { Clients, Projects, TimeEntries } from '../db/repos';
 import { liveQueryOptions, staticQueryOptions } from '../lib/query-client';
@@ -65,7 +65,7 @@ export function ReportsView() {
     }
     for (const e of entriesQ.data ?? []) {
       const day = new Date(startOfDay(e.started_at)).toISOString().slice(5, 10);
-      buckets[day] = (buckets[day] ?? 0) + durationSeconds(e.started_at, e.ended_at) / 3600;
+      buckets[day] = (buckets[day] ?? 0) + entryDurationSeconds(e) / 3600;
     }
     return Object.entries(buckets).map(([day, hours]) => ({
       day,
@@ -85,7 +85,7 @@ export function ReportsView() {
       const key = proj ? `project:${proj.id}` : client ? `client:${client.id}` : 'none';
       const name = proj?.name ?? (client ? `${client.name} (no project)` : 'No project');
       const color = proj?.color ?? '#71717a';
-      const secs = durationSeconds(e.started_at, e.ended_at);
+      const secs = entryDurationSeconds(e);
       const revenue = e.billable && proj?.hourly_rate ? (secs / 3600) * proj.hourly_rate : 0;
       const cur = totals.get(key) ?? {
         key,

@@ -1,9 +1,12 @@
 mod tray;
 mod commands;
+mod timer_state;
 #[cfg(target_os = "macos")]
 mod idle;
 
 use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, ShortcutState};
+
+use crate::timer_state::TimerState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -24,10 +27,15 @@ pub fn run() {
                         if shortcut.matches(Modifiers::ALT | Modifiers::SUPER, Code::KeyT) {
                             let _ = app.emit_to("main", "global-shortcut://toggle-timer", ());
                         }
+                        // ⇧⌘Space summons the quick panel anchored on the tray icon.
+                        if shortcut.matches(Modifiers::SHIFT | Modifiers::SUPER, Code::Space) {
+                            tray::show_panel_at_tray(app);
+                        }
                     }
                 })
                 .build(),
         )
+        .manage(TimerState::new())
         .invoke_handler(tauri::generate_handler![
             commands::idle_seconds,
             commands::frontmost_app_stub,
@@ -40,10 +48,14 @@ pub fn run() {
             // Tray icon — primary affordance on macOS
             tray::setup(app.handle())?;
 
-            // Register the global toggle shortcut
+            // Register global toggle (⌥⌘T) and quick-panel (⇧⌘Space) shortcuts.
             let toggle = Shortcut::new(Some(Modifiers::ALT | Modifiers::SUPER), Code::KeyT);
+            let panel = Shortcut::new(Some(Modifiers::SHIFT | Modifiers::SUPER), Code::Space);
             if let Err(e) = app.global_shortcut().register(toggle) {
-                log::warn!("Failed to register global shortcut: {e}");
+                log::warn!("Failed to register toggle shortcut: {e}");
+            }
+            if let Err(e) = app.global_shortcut().register(panel) {
+                log::warn!("Failed to register panel shortcut: {e}");
             }
 
             Ok(())

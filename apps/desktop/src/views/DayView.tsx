@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Button, Combobox, EmptyState, Field, FieldLabel, Input } from '@ttf/ui';
-import { durationSeconds, formatDuration, startOfDay } from '@ttf/shared';
+import { entryDurationSeconds, formatDuration, startOfDay } from '@ttf/shared';
 import { ChevronLeft, ChevronRight, Clock, Plus, Trash2, X } from 'lucide-react';
 import { TimeEntries, Projects, Clients, type TimeEntry } from '../db/repos';
 import { useTimer } from '../state/timer';
@@ -110,7 +110,7 @@ export function DayView() {
   }, [day, entriesQ.data, running]);
 
   const totalSeconds = displayEntries.reduce(
-    (sum, e) => sum + durationSeconds(e.started_at, e.ended_at),
+    (sum, e) => sum + entryDurationSeconds(e),
     0,
   );
 
@@ -119,7 +119,7 @@ export function DayView() {
       const project = entry.project_id ? projById.get(entry.project_id) : null;
       return entry.billable && project?.hourly_rate;
     })
-    .reduce((sum, e) => sum + durationSeconds(e.started_at, e.ended_at), 0);
+    .reduce((sum, e) => sum + entryDurationSeconds(e), 0);
 
   const remove = useMutation({
     mutationFn: (id: string) => TimeEntries.softDelete(id),
@@ -370,7 +370,7 @@ export function DayView() {
               : project?.client_id
                 ? clientById.get(project.client_id) ?? null
                 : null;
-            const dur = durationSeconds(entry.started_at, entry.ended_at);
+            const dur = entryDurationSeconds(entry);
             const isLive = !entry.ended_at;
             const targetLabel = project?.name ?? (client ? `${client.name} (no project)` : 'No project');
             const isEditing = editingId === entry.id;

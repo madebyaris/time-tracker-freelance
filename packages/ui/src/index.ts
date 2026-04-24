@@ -21,3 +21,4 @@ export { EmptyState, type EmptyStateProps } from './components/EmptyState';
 export { Section, type SectionProps } from './components/Section';
 export { Field, FieldHint, FieldLabel, FieldRow } from './components/Field';
 export { Kbd } from './components/Kbd';
+export { Avatar, type AvatarProps } from './components/Avatar';

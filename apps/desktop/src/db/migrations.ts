@@ -169,4 +169,24 @@ export const migrations: Migration[] = [
       CREATE INDEX IF NOT EXISTS tasks_updated_idx ON tasks(updated_at);
     `,
   },
+  {
+    version: 4,
+    name: 'clients_richer_profile',
+    sql: `
+      ALTER TABLE clients ADD COLUMN logo_data TEXT;
+      ALTER TABLE clients ADD COLUMN website TEXT;
+      ALTER TABLE clients ADD COLUMN phone TEXT;
+      ALTER TABLE clients ADD COLUMN address TEXT;
+      ALTER TABLE clients ADD COLUMN tax_id TEXT;
+      ALTER TABLE clients ADD COLUMN default_hourly_rate_cents INTEGER;
+    `,
+  },
+  {
+    version: 5,
+    name: 'time_entries_paused',
+    sql: `
+      ALTER TABLE time_entries ADD COLUMN paused_at INTEGER;
+      ALTER TABLE time_entries ADD COLUMN paused_seconds INTEGER NOT NULL DEFAULT 0;
+    `,
+  },
 ];

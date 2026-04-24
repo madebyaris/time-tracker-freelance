@@ -61,6 +61,8 @@ type TimeEntryRow = {
   description?: string | null;
   started_at: number;
   ended_at?: number | null;
+  paused_at?: number | null;
+  paused_seconds?: number;
   billable?: boolean;
   deleted_at?: number | null;
 };
@@ -94,8 +96,9 @@ function isActive(row: { deleted_at?: number | null }): boolean {
 }
 
 function durationSeconds(entry: TimeEntryRow, now: number): number {
-  const end = entry.ended_at ?? now;
-  return Math.max(0, Math.floor((end - entry.started_at) / 1000));
+  const end = entry.ended_at ?? entry.paused_at ?? now;
+  const pausedSecs = entry.paused_seconds ?? 0;
+  return Math.max(0, Math.floor((end - entry.started_at) / 1000) - pausedSecs);
 }
 
 function formatMoney(minor: number, currency: string): string {

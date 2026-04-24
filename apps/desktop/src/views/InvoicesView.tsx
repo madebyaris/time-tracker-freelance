@@ -15,7 +15,7 @@ import {
 import { InvoiceDocument, type InvoiceData, type InvoiceLineData } from '@ttf/invoice-pdf';
 import {
   applyTax,
-  durationSeconds,
+  entryDurationSeconds,
   formatMoney,
   lineAmount,
   secondsToHundredthsOfHour,
@@ -71,7 +71,7 @@ export function InvoicesView() {
         if (!e.project_id) continue;
         const p = projById.get(e.project_id);
         if (!p?.hourly_rate) continue;
-        const secs = durationSeconds(e.started_at, e.ended_at);
+        const secs = entryDurationSeconds(e);
         const h = secondsToHundredthsOfHour(secs);
         const amount = lineAmount(h, p.hourly_rate);
         lineRows.push({
