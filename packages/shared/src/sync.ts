@@ -11,6 +11,7 @@ export const syncableTableNames = [
   'clients',
   'projects',
   'tags',
+  'tasks',
   'time_entries',
   'entry_tags',
   'invoices',

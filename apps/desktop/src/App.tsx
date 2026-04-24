@@ -2,10 +2,11 @@ import { useEffect, useState, type MouseEvent } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useQuery } from '@tanstack/react-query';
-import { cn } from '@ttf/ui';
+import { cn, TooltipProvider } from '@ttf/ui';
 import { TimerBar } from './components/TimerBar';
 import { TabBar, tabItems, type Tab } from './components/TabBar';
 import { DayView } from './views/DayView';
+import { TasksView } from './views/TasksView';
 import { ProjectsView } from './views/ProjectsView';
 import { ClientsView } from './views/ClientsView';
 import { ReportsView } from './views/ReportsView';
@@ -74,21 +75,25 @@ export function App() {
   }
 
   return (
+    <TooltipProvider delayDuration={250} skipDelayDuration={400}>
     <div className="flex h-full text-zinc-900 dark:text-zinc-100">
-      <aside className="flex w-[212px] shrink-0 flex-col border-r border-zinc-200 bg-zinc-100/70 dark:border-zinc-800 dark:bg-zinc-950/60 max-md:w-[56px]">
+      <aside className="flex w-[212px] shrink-0 flex-col border-r border-zinc-200 bg-zinc-100/70 dark:border-zinc-800 dark:bg-zinc-950/60 max-md:w-[60px]">
         <div
           data-tauri-drag-region
           onMouseDown={startWindowDrag}
-          className="titlebar-drag flex h-11 items-center px-3 pl-[76px] max-md:pl-3 max-md:justify-center"
+          className="titlebar-drag flex h-11 items-center px-3 pl-[76px]"
         >
-          <div data-tauri-drag-region className="flex items-center gap-2">
+          {/* In the collapsed (icon-only) sidebar the macOS traffic lights occupy
+              roughly the same horizontal space as our logo, so hide the brand
+              there and let the system controls act as the window marker. */}
+          <div data-tauri-drag-region className="flex items-center gap-2 max-md:hidden">
             <span
               data-tauri-drag-region
               className="flex h-[22px] w-[22px] items-center justify-center rounded-[6px] bg-zinc-900 text-[11px] font-semibold text-white dark:bg-white dark:text-zinc-950"
             >
               T
             </span>
-            <span data-tauri-drag-region className="text-sm font-semibold tracking-tight max-md:hidden">
+            <span data-tauri-drag-region className="text-sm font-semibold tracking-tight">
               Tickr
             </span>
           </div>
@@ -129,6 +134,7 @@ export function App() {
           <TimerBar />
           <main className="min-h-0 flex-1 overflow-auto">
             {tab === 'day' && <DayView />}
+            {tab === 'tasks' && <TasksView />}
             {tab === 'projects' && <ProjectsView />}
             {tab === 'clients' && <ClientsView />}
             {tab === 'reports' && <ReportsView />}
@@ -138,5 +144,6 @@ export function App() {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 }

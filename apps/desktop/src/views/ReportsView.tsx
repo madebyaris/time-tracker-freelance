@@ -15,7 +15,7 @@ import {
 import { EmptyState, SegmentedControl } from '@ttf/ui';
 import { durationSeconds, formatDuration, formatMoney, startOfDay } from '@ttf/shared';
 import { BarChart3 } from 'lucide-react';
-import { Projects, TimeEntries } from '../db/repos';
+import { Clients, Projects, TimeEntries } from '../db/repos';
 import { liveQueryOptions, staticQueryOptions } from '../lib/query-client';
 
 type Range = '7d' | '30d' | '90d';
@@ -37,6 +37,11 @@ export function ReportsView() {
     queryFn: () => Projects.list({ includeArchived: true }),
     ...staticQueryOptions,
   });
+  const clientsQ = useQuery({
+    queryKey: ['clients'],
+    queryFn: () => Clients.list(),
+    ...staticQueryOptions,
+  });
   const entriesQ = useQuery({
     queryKey: ['entries', 'reports', from, to],
     queryFn: () => TimeEntries.list({ from, to }),
@@ -46,6 +51,10 @@ export function ReportsView() {
   const projById = useMemo(
     () => new Map((projectsQ.data ?? []).map((p) => [p.id, p])),
     [projectsQ.data],
+  );
+  const clientById = useMemo(
+    () => new Map((clientsQ.data ?? []).map((client) => [client.id, client])),
+    [clientsQ.data],
   );
 
   const perDay = useMemo(() => {
@@ -67,26 +76,53 @@ export function ReportsView() {
   const perProject = useMemo(() => {
     const totals = new Map<
       string,
-      { name: string; color: string; seconds: number; revenue: number }
+      { key: string; name: string; color: string; seconds: number; revenue: number; currency: string | null }
     >();
     for (const e of entriesQ.data ?? []) {
       const proj = e.project_id ? projById.get(e.project_id) : null;
-      const key = proj?.id ?? 'none';
-      const name = proj?.name ?? 'No project';
-      const color = proj?.color ?? '#a1a1aa';
+      const client = (proj?.client_id ? clientById.get(proj.client_id) : null) ??
+        (e.client_id ? clientById.get(e.client_id) : null);
+      const key = proj ? `project:${proj.id}` : client ? `client:${client.id}` : 'none';
+      const name = proj?.name ?? (client ? `${client.name} (no project)` : 'No project');
+      const color = proj?.color ?? '#71717a';
       const secs = durationSeconds(e.started_at, e.ended_at);
       const revenue = e.billable && proj?.hourly_rate ? (secs / 3600) * proj.hourly_rate : 0;
-      const cur = totals.get(key) ?? { name, color, seconds: 0, revenue: 0 };
+      const cur = totals.get(key) ?? {
+        key,
+        name,
+        color,
+        seconds: 0,
+        revenue: 0,
+        currency: proj?.currency ?? null,
+      };
       cur.seconds += secs;
       cur.revenue += revenue;
       totals.set(key, cur);
     }
     return [...totals.values()].sort((a, b) => b.seconds - a.seconds);
-  }, [entriesQ.data, projById]);
+  }, [clientById, entriesQ.data, projById]);
 
   const totalSecs = perProject.reduce((sum, p) => sum + p.seconds, 0);
-  const totalRevenue = perProject.reduce((sum, p) => sum + p.revenue, 0);
   const avgHoursPerDay = totalSecs / 3600 / days;
+  const revenueByCurrency = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const group of perProject) {
+      if (!group.currency || group.revenue <= 0) continue;
+      totals.set(group.currency, (totals.get(group.currency) ?? 0) + group.revenue);
+    }
+    return [...totals.entries()]
+      .map(([currency, revenue]) => ({ currency, revenue }))
+      .sort((a, b) => b.revenue - a.revenue);
+  }, [perProject]);
+  const revenueLabel =
+    revenueByCurrency.length === 0
+      ? '—'
+      : revenueByCurrency.length === 1
+        ? formatMoney(Math.round(revenueByCurrency[0]!.revenue), revenueByCurrency[0]!.currency)
+        : revenueByCurrency
+            .slice(0, 2)
+            .map((item) => formatMoney(Math.round(item.revenue), item.currency))
+            .join(' · ') + (revenueByCurrency.length > 2 ? ` +${revenueByCurrency.length - 2}` : '');
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-5">
@@ -105,8 +141,8 @@ export function ReportsView() {
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Tracked" value={formatDuration(totalSecs, 'hm')} />
         <Stat label="Avg / day" value={`${avgHoursPerDay.toFixed(1)}h`} />
-        <Stat label="Revenue" value={formatMoney(Math.round(totalRevenue), 'USD')} />
-        <Stat label="Projects" value={String(perProject.length)} />
+        <Stat label="Revenue" value={revenueLabel} />
+        <Stat label="Groups" value={String(perProject.length)} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,1fr)]">
@@ -127,21 +163,24 @@ export function ReportsView() {
                 />
                 <YAxis stroke="#71717a" axisLine={false} tickLine={false} fontSize={11} />
                 <Tooltip
-                  cursor={{ fill: 'rgba(113,113,122,0.08)' }}
+                  cursor={{ fill: 'rgba(59,130,246,0.08)' }}
                   contentStyle={{
                     border: '1px solid rgba(113,113,122,0.2)',
-                    background: 'var(--tt-tooltip, white)',
-                    borderRadius: 8,
+                    background: '#18181b',
+                    borderRadius: 10,
                     fontSize: 12,
+                    color: '#fafafa',
                   }}
+                  labelStyle={{ color: '#fafafa' }}
+                  itemStyle={{ color: '#fafafa' }}
                 />
-                <Bar dataKey="hours" fill="#18181b" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="hours" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
         </Panel>
 
-        <Panel title="By project">
+        <Panel title="Top work">
           {perProject.length === 0 ? (
             <EmptyChart />
           ) : (
@@ -165,16 +204,19 @@ export function ReportsView() {
                     formatter={(value: number) => `${value.toFixed(2)}h`}
                     contentStyle={{
                       border: '1px solid rgba(113,113,122,0.2)',
-                      background: 'white',
-                      borderRadius: 8,
+                      background: '#18181b',
+                      borderRadius: 10,
                       fontSize: 12,
+                      color: '#fafafa',
                     }}
+                    labelStyle={{ color: '#fafafa' }}
+                    itemStyle={{ color: '#fafafa' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
               <ul className="flex flex-col gap-1.5">
                 {perProject.slice(0, 5).map((project) => (
-                  <li key={project.name} className="flex items-center gap-2 text-sm">
+                  <li key={project.key} className="flex items-center gap-2 text-sm">
                     <span
                       className="h-2 w-2 shrink-0 rounded-full"
                       style={{ backgroundColor: project.color }}
@@ -191,42 +233,58 @@ export function ReportsView() {
         </Panel>
       </div>
 
-      <Panel title="Project breakdown">
+      <Panel title="Target breakdown">
         {perProject.length === 0 ? (
           <EmptyChart />
         ) : (
-          <div className="overflow-hidden rounded-md border border-zinc-100 dark:border-zinc-800">
-            <div className="grid grid-cols-[minmax(0,1fr)_90px_90px_110px] items-center gap-3 border-b border-zinc-100 bg-zinc-50 px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
-              <span>Project</span>
-              <span className="text-right">Hours</span>
-              <span className="text-right">Share</span>
-              <span className="text-right">Revenue</span>
+          <div className="flex flex-col gap-3">
+            {revenueByCurrency.length > 1 && (
+              <div className="flex flex-wrap gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                {revenueByCurrency.map((item) => (
+                  <span
+                    key={item.currency}
+                    className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-1 dark:border-zinc-800 dark:bg-zinc-950/40"
+                  >
+                    {item.currency}: {formatMoney(Math.round(item.revenue), item.currency)}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="overflow-hidden rounded-md border border-zinc-100 dark:border-zinc-800">
+              <div className="grid grid-cols-[minmax(0,1fr)_90px_90px_120px] items-center gap-3 border-b border-zinc-100 bg-zinc-50 px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-400">
+                <span>Target</span>
+                <span className="text-right">Hours</span>
+                <span className="text-right">Share</span>
+                <span className="text-right">Revenue</span>
+              </div>
+              <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {perProject.map((project) => (
+                  <li
+                    key={project.key}
+                    className="grid grid-cols-[minmax(0,1fr)_90px_90px_120px] items-center gap-3 px-3 py-2.5 text-sm"
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: project.color }}
+                      />
+                      <span className="truncate">{project.name}</span>
+                    </div>
+                    <div className="text-right font-mono tabular-nums">
+                      {formatDuration(project.seconds, 'hm')}
+                    </div>
+                    <div className="text-right text-zinc-500 dark:text-zinc-400">
+                      {((project.seconds / Math.max(totalSecs, 1)) * 100).toFixed(0)}%
+                    </div>
+                    <div className="text-right">
+                      {project.currency && project.revenue > 0
+                        ? formatMoney(Math.round(project.revenue), project.currency)
+                        : '—'}
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {perProject.map((project) => (
-                <li
-                  key={project.name}
-                  className="grid grid-cols-[minmax(0,1fr)_90px_90px_110px] items-center gap-3 px-3 py-2.5 text-sm"
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: project.color }}
-                    />
-                    <span className="truncate">{project.name}</span>
-                  </div>
-                  <div className="text-right font-mono tabular-nums">
-                    {formatDuration(project.seconds, 'hm')}
-                  </div>
-                  <div className="text-right text-zinc-500 dark:text-zinc-400">
-                    {((project.seconds / Math.max(totalSecs, 1)) * 100).toFixed(0)}%
-                  </div>
-                  <div className="text-right">
-                    {formatMoney(Math.round(project.revenue), 'USD')}
-                  </div>
-                </li>
-              ))}
-            </ul>
           </div>
         )}
       </Panel>

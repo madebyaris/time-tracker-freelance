@@ -107,11 +107,38 @@ export const tags = pgTable('tags', {
     .references(() => users.id, { onDelete: 'cascade' }),
 });
 
+export const tasks = pgTable(
+  'tasks',
+  {
+    id: text('id').primaryKey(),
+    title: text('title').notNull(),
+    notes: text('notes'),
+    project_id: text('project_id'),
+    client_id: text('client_id'),
+    due_at: bigint('due_at', { mode: 'number' }),
+    completed_at: bigint('completed_at', { mode: 'number' }),
+    position: integer('position').notNull().default(0),
+    updated_at: bigint('updated_at', { mode: 'number' }).notNull(),
+    deleted_at: bigint('deleted_at', { mode: 'number' }),
+    device_id: text('device_id').notNull(),
+    user_id: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+  },
+  (t) => ({
+    projectIdx: index('tasks_project_idx').on(t.project_id),
+    clientIdx: index('tasks_client_idx').on(t.client_id),
+    dueIdx: index('tasks_due_idx').on(t.due_at),
+    userUpdatedIdx: index('tasks_user_updated_idx').on(t.user_id, t.updated_at),
+  }),
+);
+
 export const time_entries = pgTable(
   'time_entries',
   {
     id: text('id').primaryKey(),
     project_id: text('project_id'),
+    client_id: text('client_id'),
     started_at: bigint('started_at', { mode: 'number' }).notNull(),
     ended_at: bigint('ended_at', { mode: 'number' }),
     description: text('description'),
@@ -127,6 +154,7 @@ export const time_entries = pgTable(
   },
   (t) => ({
     projectIdx: index('time_entries_project_idx').on(t.project_id),
+    clientIdx: index('time_entries_client_idx').on(t.client_id),
     startedIdx: index('time_entries_started_idx').on(t.started_at),
     updatedUserIdx: index('time_entries_updated_user_idx').on(t.user_id, t.updated_at),
   }),
@@ -214,6 +242,7 @@ export const allSyncableTables = {
   clients,
   projects,
   tags,
+  tasks,
   time_entries,
   entry_tags,
   invoices,

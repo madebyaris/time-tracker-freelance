@@ -19,6 +19,7 @@
 - [x] Support direct client-only time entries (no project required)
 - [x] Add manual/custom time entry flow for backfilling missed sessions
 - [x] Fix macOS window dragging in overlay titlebar mode via capability + explicit drag call
+- [x] Add a Tasks layer (Today / Upcoming / Inbox / Completed) with inline edit, completion, due dates, and start-timer-from-task; synced across SQLite, Postgres and D1
 - [ ] D1 + shared route factory for true dual deploy
 - [ ] `better-auth` or OAuth replace minimal JWT
 - [ ] Tauri Updater + signed macOS build

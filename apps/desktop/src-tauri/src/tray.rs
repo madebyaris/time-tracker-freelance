@@ -36,7 +36,6 @@ pub fn setup<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         "toggle" => toggle_main(app),
         "start" => {
             let _ = app.emit_to("main", "tray://start", ());
-            show_main(app);
         }
         "stop" => {
             let _ = app.emit_to("main", "tray://stop", ());
@@ -68,16 +67,16 @@ fn toggle_main<R: Runtime>(app: &AppHandle<R>) {
         if window.is_visible().unwrap_or(false) {
             let _ = window.hide();
         } else {
+            hide_panel(app);
             let _ = window.show();
             let _ = window.set_focus();
         }
     }
 }
 
-fn show_main<R: Runtime>(app: &AppHandle<R>) {
-    if let Some(window) = app.get_webview_window("main") {
-        let _ = window.show();
-        let _ = window.set_focus();
+fn hide_panel<R: Runtime>(app: &AppHandle<R>) {
+    if let Some(panel) = app.get_webview_window("panel") {
+        let _ = panel.hide();
     }
 }
 

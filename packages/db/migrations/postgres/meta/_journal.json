@@ -8,6 +8,20 @@
       "when": 1713945600000,
       "tag": "0000_initial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777036800000,
+      "tag": "0001_time_entries_client",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777640400000,
+      "tag": "0002_tasks",
+      "breakpoints": true
     }
   ]
 }

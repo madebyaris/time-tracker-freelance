@@ -1,23 +1,45 @@
-/**
- * Cloudflare Workers entry. Full parity with the Node Hono app requires wiring
- * Drizzle to D1 (`@ttf/db/d1`) and (optionally) R2 for PDFs — same route modules,
- * `DB_DRIVER=d1` at build time. This stub keeps `wrangler deploy` green.
- */
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
+import { createApiApp } from './app';
+import { signAccessToken, verifyAccessToken } from './lib/jwt';
+import { createWorkerStore, type D1DatabaseLike } from './lib/worker-store';
+import { parseCorsOrigins } from './lib/runtime';
 
-const app = new Hono();
+type HonoExecutionContext = NonNullable<Parameters<ReturnType<typeof createApiApp>['fetch']>[2]>;
 
-app.use(
-  '*',
-  cors({ origin: '*', allowHeaders: ['Authorization', 'Content-Type'] }),
-);
-app.get('/health', (c) => c.json({ ok: true, runtime: 'cloudflare', note: 'use Node image for full API' }));
-app.all('*', (c) =>
-  c.json(
-    { error: 'D1 + Hono app not yet deployed from this build — run the Node `tickr` API on your host or add D1 routes here.' },
-    501,
-  ),
-);
+interface WorkerBindings {
+  DB: D1DatabaseLike;
+  JWT_SECRET: string;
+  CORS_ORIGIN?: string;
+}
 
-export default app;
+let cachedApp: ReturnType<typeof createApiApp> | null = null;
+let cachedBinding: D1DatabaseLike | null = null;
+let cachedSecret: string | null = null;
+let cachedOrigin: string | undefined;
+
+function getWorkerApp(env: WorkerBindings) {
+  if (
+    !cachedApp ||
+    cachedBinding !== env.DB ||
+    cachedSecret !== env.JWT_SECRET ||
+    cachedOrigin !== env.CORS_ORIGIN
+  ) {
+    cachedBinding = env.DB;
+    cachedSecret = env.JWT_SECRET;
+    cachedOrigin = env.CORS_ORIGIN;
+    cachedApp = createApiApp({
+      runtime: 'cloudflare',
+      corsOrigins: parseCorsOrigins(env.CORS_ORIGIN),
+      store: createWorkerStore(env.DB),
+      signAccessToken: (userId, email) => signAccessToken(env.JWT_SECRET, userId, email),
+      verifyAccessToken: (token) => verifyAccessToken(env.JWT_SECRET, token),
+    });
+  }
+
+  return cachedApp;
+}
+
+export default {
+  fetch(request: Request, env: WorkerBindings, ctx: HonoExecutionContext) {
+    return getWorkerApp(env).fetch(request, env, ctx);
+  },
+};

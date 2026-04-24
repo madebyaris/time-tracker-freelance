@@ -2,24 +2,30 @@ import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 
 const ALG = 'HS256';
 
-function secret(): Uint8Array {
-  const s = process.env.JWT_SECRET;
-  if (!s || s.length < 16) {
-    throw new Error('JWT_SECRET must be set (min 16 chars)');
+function secret(secretValue: string): Uint8Array {
+  if (!secretValue || secretValue.length < 16) {
+    throw new Error('JWT secret must be set (min 16 chars)');
   }
-  return new TextEncoder().encode(s);
+  return new TextEncoder().encode(secretValue);
 }
 
-export async function signAccessToken(userId: string, email: string): Promise<string> {
+export async function signAccessToken(
+  secretValue: string,
+  userId: string,
+  email: string,
+): Promise<string> {
   return new SignJWT({ sub: userId, email })
     .setProtectedHeader({ alg: ALG })
     .setIssuedAt()
     .setExpirationTime('30d')
-    .sign(secret());
+    .sign(secret(secretValue));
 }
 
-export async function verifyAccessToken(token: string): Promise<JWTPayload & { sub: string; email?: string }> {
-  const { payload } = await jwtVerify(token, secret());
+export async function verifyAccessToken(
+  secretValue: string,
+  token: string,
+): Promise<JWTPayload & { sub: string; email?: string }> {
+  const { payload } = await jwtVerify(token, secret(secretValue));
   if (typeof payload.sub !== 'string') throw new Error('Invalid token');
   return payload as JWTPayload & { sub: string; email?: string };
 }

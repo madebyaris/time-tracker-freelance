@@ -3,7 +3,6 @@ mod commands;
 #[cfg(target_os = "macos")]
 mod idle;
 
-use tauri::Manager;
 use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, ShortcutState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -21,13 +20,9 @@ pub fn run() {
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
                     if event.state == ShortcutState::Pressed {
-                        // ⌥⌘T toggles the timer (handled by JS)
+                        // ⌥⌘T toggles the timer without forcing the main window open.
                         if shortcut.matches(Modifiers::ALT | Modifiers::SUPER, Code::KeyT) {
                             let _ = app.emit_to("main", "global-shortcut://toggle-timer", ());
-                            if let Some(w) = app.get_webview_window("main") {
-                                let _ = w.show();
-                                let _ = w.set_focus();
-                            }
                         }
                     }
                 })
@@ -49,12 +44,6 @@ pub fn run() {
             let toggle = Shortcut::new(Some(Modifiers::ALT | Modifiers::SUPER), Code::KeyT);
             if let Err(e) = app.global_shortcut().register(toggle) {
                 log::warn!("Failed to register global shortcut: {e}");
-            }
-
-            // Show window on first launch only; subsequent launches start hidden in tray.
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.set_focus();
             }
 
             Ok(())

@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { listen } from '@tauri-apps/api/event';
 import { TimerBar } from './components/TimerBar';
 import { useTimer, startTicker } from './state/timer';
 import { queryClient } from './lib/query-client';
@@ -44,16 +43,6 @@ function PanelApp() {
     };
   }, []);
 
-  // Listen for an "open main window" intent from the panel UI.
-  useEffect(() => {
-    const unlisten = listen('panel://open-main', async () => {
-      await getCurrentWindow().hide();
-    });
-    return () => {
-      void unlisten.then((fn) => fn());
-    };
-  }, []);
-
   return (
     <div className="flex h-full flex-col gap-2 rounded-xl border border-zinc-200 bg-white/95 p-2 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45)] backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/95">
       <TimerBar compact />
@@ -72,8 +61,6 @@ function PanelApp() {
           onClick={async () => {
             const win = getCurrentWindow();
             await win.hide();
-            // Open main window: emit a global event the Rust side could
-            // also listen to; for now just rely on the tray menu.
             const { invoke } = await import('@tauri-apps/api/core');
             await invoke('show_window').catch(() => {});
           }}

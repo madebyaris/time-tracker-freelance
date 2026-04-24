@@ -167,6 +167,100 @@ export const Projects = {
   },
 };
 
+// ---------- Tasks ----------
+
+export interface Task {
+  id: string;
+  title: string;
+  notes: string | null;
+  project_id: string | null;
+  client_id: string | null;
+  due_at: number | null;
+  completed_at: number | null;
+  position: number;
+  updated_at: number;
+  deleted_at: number | null;
+  device_id: string;
+}
+
+export const Tasks = {
+  async list(opts: { includeCompleted?: boolean } = {}): Promise<Task[]> {
+    const where = opts.includeCompleted
+      ? `WHERE deleted_at IS NULL`
+      : `WHERE deleted_at IS NULL AND completed_at IS NULL`;
+    return query<Task>(
+      `SELECT * FROM tasks ${where}
+       ORDER BY
+         completed_at IS NOT NULL,
+         CASE WHEN due_at IS NULL THEN 1 ELSE 0 END,
+         due_at,
+         position,
+         updated_at DESC`,
+    );
+  },
+  async get(id: string): Promise<Task | null> {
+    const rows = await query<Task>(`SELECT * FROM tasks WHERE id = ?`, [id]);
+    return rows[0] ?? null;
+  },
+  async create(input: {
+    title: string;
+    notes?: string | null;
+    project_id?: string | null;
+    client_id?: string | null;
+    due_at?: number | null;
+  }): Promise<Task> {
+    const id = nanoid();
+    const device_id = await getDeviceId();
+    const ts = now();
+    await exec(
+      `INSERT INTO tasks (id, title, notes, project_id, client_id, due_at, position, updated_at, device_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        input.title,
+        input.notes ?? null,
+        input.project_id ?? null,
+        input.client_id ?? null,
+        input.due_at ?? null,
+        ts, // use timestamp as initial position so newly added tasks land at the bottom of equal-due groups
+        ts,
+        device_id,
+      ],
+    );
+    return (await this.get(id))!;
+  },
+  async update(
+    id: string,
+    patch: Partial<
+      Pick<Task, 'title' | 'notes' | 'project_id' | 'client_id' | 'due_at' | 'position'>
+    >,
+  ) {
+    const sets: string[] = [];
+    const vals: unknown[] = [];
+    for (const [k, v] of Object.entries(patch)) {
+      sets.push(`${k} = ?`);
+      vals.push(v);
+    }
+    sets.push('updated_at = ?');
+    vals.push(now());
+    vals.push(id);
+    await exec(`UPDATE tasks SET ${sets.join(', ')} WHERE id = ?`, vals);
+  },
+  async setCompleted(id: string, completed: boolean) {
+    await exec(
+      `UPDATE tasks SET completed_at = ?, updated_at = ? WHERE id = ?`,
+      [completed ? now() : null, now(), id],
+    );
+  },
+  async softDelete(id: string) {
+    await exec(`UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE id = ?`, [
+      now(),
+      now(),
+      id,
+    ]);
+  },
+};
+
 // ---------- Time entries ----------
 
 export const TimeEntries = {

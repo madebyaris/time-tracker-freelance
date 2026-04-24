@@ -145,4 +145,28 @@ export const migrations: Migration[] = [
       CREATE INDEX IF NOT EXISTS time_entries_client_idx ON time_entries(client_id);
     `,
   },
+  {
+    version: 3,
+    name: 'tasks',
+    sql: `
+      CREATE TABLE IF NOT EXISTS tasks (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        notes TEXT,
+        project_id TEXT REFERENCES projects(id),
+        client_id TEXT REFERENCES clients(id),
+        due_at INTEGER,
+        completed_at INTEGER,
+        position INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL,
+        deleted_at INTEGER,
+        device_id TEXT NOT NULL,
+        user_id TEXT
+      );
+      CREATE INDEX IF NOT EXISTS tasks_project_idx ON tasks(project_id);
+      CREATE INDEX IF NOT EXISTS tasks_client_idx ON tasks(client_id);
+      CREATE INDEX IF NOT EXISTS tasks_due_idx ON tasks(due_at);
+      CREATE INDEX IF NOT EXISTS tasks_updated_idx ON tasks(updated_at);
+    `,
+  },
 ];

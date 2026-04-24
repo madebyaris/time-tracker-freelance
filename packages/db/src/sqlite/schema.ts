@@ -58,11 +58,36 @@ export const tags = sqliteTable('tags', {
   user_id: text('user_id'),
 });
 
+export const tasks = sqliteTable(
+  'tasks',
+  {
+    id: text('id').primaryKey(),
+    title: text('title').notNull(),
+    notes: text('notes'),
+    project_id: text('project_id').references(() => projects.id),
+    client_id: text('client_id').references(() => clients.id),
+    due_at: integer('due_at'), // unix epoch ms; null = no due date
+    completed_at: integer('completed_at'),
+    position: integer('position').notNull().default(0),
+    updated_at: integer('updated_at').notNull(),
+    deleted_at: integer('deleted_at'),
+    device_id: text('device_id').notNull(),
+    user_id: text('user_id'),
+  },
+  (t) => ({
+    projectIdx: index('tasks_project_idx').on(t.project_id),
+    clientIdx: index('tasks_client_idx').on(t.client_id),
+    dueIdx: index('tasks_due_idx').on(t.due_at),
+    updatedIdx: index('tasks_updated_idx').on(t.updated_at),
+  }),
+);
+
 export const time_entries = sqliteTable(
   'time_entries',
   {
     id: text('id').primaryKey(),
     project_id: text('project_id').references(() => projects.id),
+    client_id: text('client_id').references(() => clients.id),
     started_at: integer('started_at').notNull(),
     ended_at: integer('ended_at'), // null = currently running
     description: text('description'),
@@ -78,6 +103,7 @@ export const time_entries = sqliteTable(
   },
   (t) => ({
     projectIdx: index('time_entries_project_idx').on(t.project_id),
+    clientIdx: index('time_entries_client_idx').on(t.client_id),
     startedIdx: index('time_entries_started_idx').on(t.started_at),
     updatedIdx: index('time_entries_updated_idx').on(t.updated_at),
   }),
@@ -171,6 +197,7 @@ export const allSyncableTables = {
   clients,
   projects,
   tags,
+  tasks,
   time_entries,
   entry_tags,
   invoices,

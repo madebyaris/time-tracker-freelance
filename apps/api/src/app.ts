@@ -1,24 +1,27 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { authRoutes } from './routes/auth';
-import { syncRoutes } from './routes/sync';
+import { createAuthRoutes } from './routes/auth';
+import { createSyncRoutes } from './routes/sync';
+import { parseCorsOrigins, withRuntime, type ApiEnv } from './lib/runtime';
+import type { ApiRuntime } from './lib/store';
 
-const app = new Hono();
+export function createApiApp(runtime: ApiRuntime) {
+  const app = new Hono<ApiEnv>();
 
-const origin = process.env.CORS_ORIGIN?.split(',').map((s) => s.trim()) ?? ['*'];
+  app.use('*', withRuntime(runtime));
+  app.use(
+    '*',
+    cors({
+      origin: runtime.corsOrigins.length > 0 ? runtime.corsOrigins : parseCorsOrigins(),
+      allowHeaders: ['Authorization', 'Content-Type'],
+      allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    }),
+  );
 
-app.use(
-  '*',
-  cors({
-    origin,
-    allowHeaders: ['Authorization', 'Content-Type'],
-    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  }),
-);
+  app.get('/health', (c) => c.json({ ok: true, service: 'ttf-api', runtime: runtime.runtime }));
 
-app.get('/health', (c) => c.json({ ok: true, service: 'ttf-api' }));
+  app.route('/auth', createAuthRoutes());
+  app.route('/sync', createSyncRoutes());
 
-app.route('/auth', authRoutes);
-app.route('/sync', syncRoutes);
-
-export default app;
+  return app;
+}
