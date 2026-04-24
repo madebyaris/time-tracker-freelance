@@ -1,0 +1,63 @@
+<svg width="1200" height="420" viewBox="0 0 1200 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="100" y1="40" x2="1070" y2="390" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6AD7E6"/>
+      <stop offset="0.5" stop-color="#1F4E86"/>
+      <stop offset="1" stop-color="#2CCFC2"/>
+    </linearGradient>
+    <linearGradient id="cardStroke" x1="320" y1="0" x2="900" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.06"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="1200" height="420" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="22" stdDeviation="24" flood-color="#061321" flood-opacity="0.24"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="420" rx="32" fill="#091320"/>
+  <rect x="18" y="18" width="1164" height="384" rx="28" fill="url(#bg)" opacity="0.95"/>
+  <circle cx="1090" cy="56" r="140" fill="#0D1830" fill-opacity="0.28"/>
+  <circle cx="80" cy="364" r="130" fill="#D7FAFF" fill-opacity="0.13"/>
+
+  <g filter="url(#shadow)">
+    <rect x="64" y="54" width="1072" height="312" rx="32" fill="#0B1523" fill-opacity="0.78"/>
+    <rect x="64.75" y="54.75" width="1070.5" height="310.5" rx="31.25" stroke="url(#cardStroke)" stroke-width="1.5"/>
+  </g>
+
+  <g transform="translate(100 90)">
+    <rect x="0" y="0" width="176" height="176" rx="40" fill="url(#bg)" opacity="0.92"/>
+    <rect x="20" y="20" width="136" height="136" rx="30" fill="#102338"/>
+    <circle cx="88" cy="88" r="46" fill="#102338" stroke="#D9F2F7" stroke-width="10"/>
+    <path d="M88 86V56" stroke="#D9F2F7" stroke-width="10" stroke-linecap="square"/>
+    <path d="M88 88H118" stroke="#D9F2F7" stroke-width="10" stroke-linecap="square"/>
+    <circle cx="88" cy="88" r="8" fill="#D9F2F7"/>
+    <path d="M58 120L78 140L132 78" stroke="#39D2C8" stroke-width="12" stroke-linecap="square" stroke-linejoin="miter"/>
+    <path d="M88 30V42" stroke="#D9F2F7" stroke-width="8"/>
+    <path d="M88 134V146" stroke="#D9F2F7" stroke-width="8"/>
+    <path d="M30 88H42" stroke="#D9F2F7" stroke-width="8"/>
+    <path d="M134 88H146" stroke="#D9F2F7" stroke-width="8"/>
+  </g>
+
+  <g fill="#F7FBFF">
+    <text x="320" y="132" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="54" font-weight="700">Tickr</text>
+    <text x="320" y="176" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="24" font-weight="500" fill-opacity="0.84">
+      Local-first time tracking for indie freelancers on macOS
+    </text>
+    <text x="320" y="224" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="18" fill-opacity="0.76">
+      Fast capture. Offline by default. Optional sync when you want it.
+    </text>
+  </g>
+
+  <g transform="translate(320 262)">
+    <rect x="0" y="0" width="186" height="56" rx="16" fill="#112336" stroke="#FFFFFF" stroke-opacity="0.08"/>
+    <circle cx="22" cy="28" r="7" fill="#39D2C8"/>
+    <text x="40" y="34" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="18" font-weight="600" fill="#F7FBFF">Quick panel</text>
+
+    <rect x="204" y="0" width="206" height="56" rx="16" fill="#112336" stroke="#FFFFFF" stroke-opacity="0.08"/>
+    <rect x="222" y="17" width="44" height="22" rx="11" fill="#1B3046"/>
+    <text x="278" y="34" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="18" font-weight="600" fill="#F7FBFF">Live menubar</text>
+
+    <rect x="428" y="0" width="210" height="56" rx="16" fill="#112336" stroke="#FFFFFF" stroke-opacity="0.08"/>
+    <text x="448" y="34" font-family="Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="18" font-weight="600" fill="#F7FBFF">Real pause/resume</text>
+  </g>
+</svg>
