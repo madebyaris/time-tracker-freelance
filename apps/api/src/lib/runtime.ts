@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { ApiRuntime } from './store';
+import type { RegistrationMode } from './session';
 
 export interface ApiVariables {
   runtime: ApiRuntime;
@@ -21,7 +22,16 @@ export function parseCorsOrigins(value?: string): string[] {
     ?.split(',')
     .map((part) => part.trim())
     .filter(Boolean);
-  return origins && origins.length > 0 ? origins : ['*'];
+  return origins && origins.length > 0
+    ? origins
+    : ['http://localhost:1420', 'http://localhost:5173', 'tauri://localhost'];
+}
+
+export function parseRegistrationMode(value: string | undefined, fallback: RegistrationMode): RegistrationMode {
+  if (value === 'open' || value === 'first-user' || value === 'disabled') {
+    return value;
+  }
+  return fallback;
 }
 
 export function withRuntime(runtime: ApiRuntime) {

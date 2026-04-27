@@ -20,8 +20,8 @@ import {
   YAxis,
 } from 'recharts';
 
-const key = 'ttf_web_token';
 const bu = 'ttf_base_url';
+const defaultApiBase = import.meta.env.VITE_API_BASE_URL ?? '';
 
 type MeResponse = { id: string; email: string; name: string | null };
 
@@ -201,51 +201,58 @@ function createDashboardSnapshot(sync: PullResponse | undefined): DashboardSnaps
 }
 
 export function App() {
-  const [url, setUrl] = useState(() => localStorage.getItem(bu) ?? 'http://localhost:8787');
-  const [token, setToken] = useState(() => localStorage.getItem(key) ?? '');
+  const [url, setUrl] = useState(() => localStorage.getItem(bu) ?? defaultApiBase);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const apiBase = url.trim().replace(/\/$/, '');
+  const apiUrl = (path: string) => (apiBase ? `${apiBase}${path}` : path);
 
   useEffect(() => {
     localStorage.setItem(bu, url);
   }, [url]);
 
-  const save = () => {
-    localStorage.setItem(key, token);
-  };
+  const me = useQuery({
+    queryKey: ['me', url],
+    retry: false,
+    queryFn: async () => {
+      const r = await fetch(apiUrl('/auth/me'), { credentials: 'include' });
+      if (r.status === 401) return null;
+      if (!r.ok) throw new Error('session check failed');
+      return (await r.json()) as { id: string; email: string; name: string | null };
+    },
+  });
 
   const authenticate = async (mode: 'login' | 'register') => {
-    const r = await fetch(`${url}/auth/${mode}`, {
+    const r = await fetch(apiUrl(`/auth/${mode}`), {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(mode === 'register' ? { email, password, name } : { email, password }),
     });
-    const j = (await r.json()) as { token?: string; error?: string };
-    if (j.token) {
-      setToken(j.token);
-      localStorage.setItem(key, j.token);
+    const j = (await r.json()) as { user?: MeResponse; error?: string };
+    if (r.ok && j.user) {
+      setPassword('');
+      await me.refetch();
     } else {
       alert(j.error ?? r.statusText);
     }
   };
 
-  const me = useQuery({
-    queryKey: ['me', url, token],
-    enabled: !!token,
-    queryFn: async () => {
-      const r = await fetch(`${url}/auth/me`, { headers: { authorization: `Bearer ${token}` } });
-      if (!r.ok) throw new Error('session expired');
-      return (await r.json()) as { id: string; email: string; name: string | null };
-    },
-  });
+  const logout = async () => {
+    await fetch(apiUrl('/auth/logout'), {
+      method: 'POST',
+      credentials: 'include',
+    });
+    await me.refetch();
+  };
 
   const sync = useQuery({
-    queryKey: ['sync-snapshot', url, token],
-    enabled: !!token && !!me.data,
+    queryKey: ['sync-snapshot', url, me.data?.id],
+    enabled: !!me.data,
     queryFn: async () => {
-      const pull = await fetch(`${url}/sync/pull?since=0&device_id=web-dashboard&protocol=1`, {
-        headers: { authorization: `Bearer ${token}` },
+      const pull = await fetch(apiUrl('/sync/pull?since=0&device_id=web-dashboard&protocol=1'), {
+        credentials: 'include',
       });
       if (!pull.ok) throw new Error('sync pull failed');
       return (await pull.json()) as PullResponse;
@@ -266,30 +273,25 @@ export function App() {
       <Card>
         <CardHeader>
           <CardTitle>Connection</CardTitle>
-          <CardDescription>Store a base URL and sign in to load the latest sync snapshot.</CardDescription>
+          <CardDescription>
+            Leave the base URL blank for same-origin Cloudflare deploys, or point at a local API.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Input placeholder="API base URL" value={url} onChange={(e) => setUrl(e.target.value)} />
           <Input
-            type="password"
-            placeholder="Bearer token"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
+            placeholder="API base URL (optional)"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
           />
           <div className="flex flex-wrap gap-2">
-            <Button onClick={save}>Save token</Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setToken('');
-                localStorage.removeItem(key);
-              }}
-            >
-              Clear token
-            </Button>
-            <Button variant="secondary" onClick={() => sync.refetch()} disabled={!token}>
+            <Button variant="secondary" onClick={() => sync.refetch()} disabled={!me.data}>
               Refresh snapshot
             </Button>
+            {me.data && (
+              <Button variant="secondary" onClick={logout}>
+                Log out
+              </Button>
+            )}
           </div>
           <div className="grid gap-2 md:grid-cols-3">
             <Input placeholder="Name (for register)" value={name} onChange={(e) => setName(e.target.value)} />

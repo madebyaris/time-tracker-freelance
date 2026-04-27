@@ -1,5 +1,5 @@
 import { nanoid, type SyncableTableName } from '@ttf/shared';
-import type { ApiStore, CreateUserInput, UserRecord } from './store';
+import type { ApiStore, CreateUserInput, SessionRecord, UserRecord } from './store';
 
 interface D1PreparedStatement {
   bind(...values: unknown[]): D1PreparedStatement;
@@ -16,197 +16,6 @@ type SyncRow = Record<string, unknown> & {
   updated_at: number;
   user_id?: string | null;
 };
-
-const schemaSql = `
-CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY,
-  email TEXT NOT NULL UNIQUE,
-  name TEXT,
-  password_hash TEXT,
-  created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL
-);
-CREATE INDEX IF NOT EXISTS users_email_idx ON users (email);
-
-CREATE TABLE IF NOT EXISTS clients (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  email TEXT,
-  currency TEXT NOT NULL DEFAULT 'USD',
-  notes TEXT,
-  logo_data TEXT,
-  website TEXT,
-  phone TEXT,
-  address TEXT,
-  tax_id TEXT,
-  default_hourly_rate_cents INTEGER,
-  archived_at INTEGER,
-  updated_at INTEGER NOT NULL,
-  deleted_at INTEGER,
-  device_id TEXT NOT NULL,
-  user_id TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS clients_user_updated_idx ON clients (user_id, updated_at);
-
-CREATE TABLE IF NOT EXISTS projects (
-  id TEXT PRIMARY KEY,
-  client_id TEXT,
-  name TEXT NOT NULL,
-  color TEXT NOT NULL DEFAULT '#3b82f6',
-  hourly_rate INTEGER,
-  currency TEXT NOT NULL DEFAULT 'USD',
-  billable INTEGER NOT NULL DEFAULT 1,
-  archived_at INTEGER,
-  updated_at INTEGER NOT NULL,
-  deleted_at INTEGER,
-  device_id TEXT NOT NULL,
-  user_id TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS projects_user_updated_idx ON projects (user_id, updated_at);
-
-CREATE TABLE IF NOT EXISTS tags (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  color TEXT NOT NULL DEFAULT '#64748b',
-  updated_at INTEGER NOT NULL,
-  deleted_at INTEGER,
-  device_id TEXT NOT NULL,
-  user_id TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS tags_user_updated_idx ON tags (user_id, updated_at);
-
-CREATE TABLE IF NOT EXISTS tasks (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  notes TEXT,
-  project_id TEXT,
-  client_id TEXT,
-  due_at INTEGER,
-  completed_at INTEGER,
-  position INTEGER NOT NULL DEFAULT 0,
-  updated_at INTEGER NOT NULL,
-  deleted_at INTEGER,
-  device_id TEXT NOT NULL,
-  user_id TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS tasks_user_updated_idx ON tasks (user_id, updated_at);
-CREATE INDEX IF NOT EXISTS tasks_due_idx ON tasks (due_at);
-
-CREATE TABLE IF NOT EXISTS time_entries (
-  id TEXT PRIMARY KEY,
-  project_id TEXT,
-  client_id TEXT,
-  started_at INTEGER NOT NULL,
-  ended_at INTEGER,
-  paused_at INTEGER,
-  paused_seconds INTEGER NOT NULL DEFAULT 0,
-  description TEXT,
-  billable INTEGER NOT NULL DEFAULT 1,
-  source TEXT NOT NULL DEFAULT 'timer',
-  idle_discarded_seconds INTEGER NOT NULL DEFAULT 0,
-  updated_at INTEGER NOT NULL,
-  deleted_at INTEGER,
-  device_id TEXT NOT NULL,
-  user_id TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS time_entries_user_updated_idx ON time_entries (user_id, updated_at);
-
-CREATE TABLE IF NOT EXISTS entry_tags (
-  entry_id TEXT NOT NULL,
-  tag_id TEXT NOT NULL,
-  updated_at INTEGER NOT NULL,
-  deleted_at INTEGER,
-  device_id TEXT NOT NULL,
-  user_id TEXT NOT NULL,
-  PRIMARY KEY (entry_id, tag_id)
-);
-CREATE INDEX IF NOT EXISTS entry_tags_user_updated_idx ON entry_tags (user_id, updated_at);
-
-CREATE TABLE IF NOT EXISTS invoices (
-  id TEXT PRIMARY KEY,
-  client_id TEXT,
-  number TEXT NOT NULL,
-  issued_at INTEGER NOT NULL,
-  due_at INTEGER,
-  status TEXT NOT NULL DEFAULT 'draft',
-  currency TEXT NOT NULL DEFAULT 'USD',
-  subtotal INTEGER NOT NULL DEFAULT 0,
-  tax_rate INTEGER NOT NULL DEFAULT 0,
-  total INTEGER NOT NULL DEFAULT 0,
-  notes TEXT,
-  pdf_path TEXT,
-  updated_at INTEGER NOT NULL,
-  deleted_at INTEGER,
-  device_id TEXT NOT NULL,
-  user_id TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS invoices_user_updated_idx ON invoices (user_id, updated_at);
-
-CREATE TABLE IF NOT EXISTS invoice_lines (
-  id TEXT PRIMARY KEY,
-  invoice_id TEXT NOT NULL,
-  project_id TEXT,
-  description TEXT NOT NULL,
-  hours INTEGER NOT NULL,
-  rate INTEGER NOT NULL,
-  amount INTEGER NOT NULL,
-  position INTEGER NOT NULL DEFAULT 0,
-  updated_at INTEGER NOT NULL,
-  deleted_at INTEGER,
-  device_id TEXT NOT NULL,
-  user_id TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS invoice_lines_user_updated_idx ON invoice_lines (user_id, updated_at);
-
-CREATE TABLE IF NOT EXISTS recurring_invoices (
-  id TEXT PRIMARY KEY,
-  client_id TEXT,
-  schedule_cron TEXT NOT NULL,
-  template_json TEXT NOT NULL,
-  next_run_at INTEGER,
-  enabled INTEGER NOT NULL DEFAULT 1,
-  updated_at INTEGER NOT NULL,
-  deleted_at INTEGER,
-  device_id TEXT NOT NULL,
-  user_id TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS recurring_invoices_user_updated_idx ON recurring_invoices (user_id, updated_at);
-`;
-
-/**
- * Each entry runs in its own try/catch so a failure in one step (e.g. column
- * already exists) doesn't prevent the others from running.
- */
-const upgradeSteps: string[] = [
-  `ALTER TABLE time_entries ADD COLUMN client_id TEXT;`,
-  `CREATE INDEX IF NOT EXISTS time_entries_client_idx ON time_entries (client_id);`,
-  `CREATE TABLE IF NOT EXISTS tasks (
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL,
-    notes TEXT,
-    project_id TEXT,
-    client_id TEXT,
-    due_at INTEGER,
-    completed_at INTEGER,
-    position INTEGER NOT NULL DEFAULT 0,
-    updated_at INTEGER NOT NULL,
-    deleted_at INTEGER,
-    device_id TEXT NOT NULL,
-    user_id TEXT NOT NULL
-  );`,
-  `CREATE INDEX IF NOT EXISTS tasks_user_updated_idx ON tasks (user_id, updated_at);`,
-  `CREATE INDEX IF NOT EXISTS tasks_due_idx ON tasks (due_at);`,
-  // ttf-002 — richer client profile
-  `ALTER TABLE clients ADD COLUMN logo_data TEXT;`,
-  `ALTER TABLE clients ADD COLUMN website TEXT;`,
-  `ALTER TABLE clients ADD COLUMN phone TEXT;`,
-  `ALTER TABLE clients ADD COLUMN address TEXT;`,
-  `ALTER TABLE clients ADD COLUMN tax_id TEXT;`,
-  `ALTER TABLE clients ADD COLUMN default_hourly_rate_cents INTEGER;`,
-  // ttf-002 — real pause semantics on time_entries
-  `ALTER TABLE time_entries ADD COLUMN paused_at INTEGER;`,
-  `ALTER TABLE time_entries ADD COLUMN paused_seconds INTEGER NOT NULL DEFAULT 0;`,
-];
 
 const syncTableColumns: Record<SyncableTableName, readonly string[]> = {
   clients: [
@@ -419,21 +228,10 @@ async function run(db: D1DatabaseLike, sql: string, params: unknown[]): Promise<
 }
 
 export function createWorkerStore(db: D1DatabaseLike): ApiStore {
-  let ready: Promise<void> | null = null;
-
   return {
-    async ensureReady() {
-      ready ??= (async () => {
-        await db.exec(schemaSql);
-        for (const step of upgradeSteps) {
-          try {
-            await db.exec(step);
-          } catch {
-            // Existing databases may already have applied the step; ignore.
-          }
-        }
-      })();
-      await ready;
+    async countUsers() {
+      const row = await queryFirst<{ value: number }>(db, `SELECT COUNT(*) AS value FROM users`, []);
+      return Number(row?.value ?? 0);
     },
     async getUserByEmail(email) {
       return await queryFirst<UserRecord>(
@@ -465,6 +263,39 @@ export function createWorkerStore(db: D1DatabaseLike): ApiStore {
         [user.id, user.email, user.name, user.password_hash, user.created_at, user.updated_at],
       );
       return user;
+    },
+    async createSession(input) {
+      const session: SessionRecord = {
+        id: nanoid(),
+        user_id: input.userId,
+        token_hash: input.tokenHash,
+        expires_at: input.expiresAt,
+        device_label: input.deviceLabel,
+        created_at: Date.now(),
+      };
+      await run(
+        db,
+        `INSERT INTO sessions (id, user_id, token_hash, expires_at, device_label, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          session.id,
+          session.user_id,
+          session.token_hash,
+          session.expires_at,
+          session.device_label,
+          session.created_at,
+        ],
+      );
+      return session;
+    },
+    async getSessionByTokenHash(tokenHash) {
+      return await queryFirst<SessionRecord>(
+        db,
+        `SELECT id, user_id, token_hash, expires_at, device_label, created_at FROM sessions WHERE token_hash = ? LIMIT 1`,
+        [tokenHash],
+      );
+    },
+    async deleteSessionByTokenHash(tokenHash) {
+      await run(db, `DELETE FROM sessions WHERE token_hash = ?`, [tokenHash]);
     },
     async upsertSyncRow(table, row, userId) {
       const next = serializeSyncRow(table, row, userId);

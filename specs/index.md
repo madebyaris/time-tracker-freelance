@@ -20,6 +20,7 @@
 | ttf-001 | [Tickr — time tracker](active/ttf-001/spec.md) | 2026-04-24 |
 | ttf-002 | [Richer clients + Claude-style tray timer](active/ttf-002/feature-brief.md) | 2026-04-27 |
 | ttf-003 | [Invoice PDF export + branded invoice profile](active/ttf-003/feature-brief.md) | 2026-04-27 |
+| ttf-004 | [Cloudflare deployability + web auth hardening](active/ttf-004/feature-brief.md) | 2026-04-27 |
 
 ### Backlog Features
 

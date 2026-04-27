@@ -1,8 +1,8 @@
-import { and, eq, gt } from 'drizzle-orm';
+import { and, count, eq, gt } from 'drizzle-orm';
 import { nanoid, syncableTableNames, type SyncableTableName } from '@ttf/shared';
 import { schema } from '@ttf/db/postgres';
 import { getDb } from './db';
-import type { ApiStore, CreateUserInput, UserRecord } from './store';
+import type { ApiStore, CreateUserInput, SessionRecord, UserRecord } from './store';
 
 type Row = Record<string, unknown> & {
   id?: string;
@@ -18,6 +18,11 @@ function shouldSkip(existing: { updated_at: number } | undefined, incoming: Row)
 
 export function createNodeStore(): ApiStore {
   return {
+    async countUsers() {
+      const db = getDb();
+      const rows = await db.select({ value: count() }).from(schema.users);
+      return Number(rows[0]?.value ?? 0);
+    },
     async getUserByEmail(email) {
       const db = getDb();
       const rows = await db.select().from(schema.users).where(eq(schema.users.email, email)).limit(1);
@@ -41,6 +46,32 @@ export function createNodeStore(): ApiStore {
       };
       await db.insert(schema.users).values(user);
       return user;
+    },
+    async createSession(input) {
+      const db = getDb();
+      const session: SessionRecord = {
+        id: nanoid(),
+        user_id: input.userId,
+        token_hash: input.tokenHash,
+        expires_at: input.expiresAt,
+        device_label: input.deviceLabel,
+        created_at: Date.now(),
+      };
+      await db.insert(schema.sessions).values(session);
+      return session;
+    },
+    async getSessionByTokenHash(tokenHash) {
+      const db = getDb();
+      const rows = await db
+        .select()
+        .from(schema.sessions)
+        .where(eq(schema.sessions.token_hash, tokenHash))
+        .limit(1);
+      return (rows[0] as SessionRecord | undefined) ?? null;
+    },
+    async deleteSessionByTokenHash(tokenHash) {
+      const db = getDb();
+      await db.delete(schema.sessions).where(eq(schema.sessions.token_hash, tokenHash));
     },
     async upsertSyncRow(table, row, userId) {
       const db = getDb();

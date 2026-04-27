@@ -30,7 +30,16 @@
     "db:up": "docker compose -f infra/docker/docker-compose.yml up -d",
     "db:down": "docker compose -f infra/docker/docker-compose.yml down",
     "db:logs": "docker compose -f infra/docker/docker-compose.yml logs -f",
-    "cf:deploy": "pnpm --filter @ttf/api cf:deploy"
+    "cf:check": "pnpm --filter @ttf/api cf:check",
+    "cf:types": "pnpm --filter @ttf/api cf:types",
+    "cf:types:check": "pnpm --filter @ttf/api cf:types:check",
+    "cf:dev": "pnpm --filter @ttf/api cf:dev",
+    "cf:migrate:local": "pnpm --filter @ttf/api cf:migrate:local",
+    "cf:migrate:staging": "pnpm --filter @ttf/api cf:migrate:staging",
+    "cf:deploy:dry": "pnpm --filter @ttf/api cf:deploy:dry",
+    "cf:deploy:staging": "pnpm --filter @ttf/api cf:deploy:staging",
+    "cf:tail:staging": "pnpm --filter @ttf/api cf:tail:staging",
+    "cf:deploy": "pnpm cf:deploy:staging"
   },
   "devDependencies": {
     "turbo": "^2.5.0",

@@ -3,8 +3,8 @@ import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 const ALG = 'HS256';
 
 function secret(secretValue: string): Uint8Array {
-  if (!secretValue || secretValue.length < 16) {
-    throw new Error('JWT secret must be set (min 16 chars)');
+  if (!secretValue || secretValue.length < 32) {
+    throw new Error('JWT secret must be set (min 32 chars)');
   }
   return new TextEncoder().encode(secretValue);
 }

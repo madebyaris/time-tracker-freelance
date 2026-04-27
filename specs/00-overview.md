@@ -42,6 +42,7 @@ flowchart LR
 | `ttf-001` | Core Tickr time tracker, desktop workflow, API/Worker parity, web dashboard | Shipped |
 | `ttf-002` | Richer client profiles, Claude-style tray QuickPanel, live menubar timer | Shipped |
 | `ttf-003` | Invoice PDF export fix, Settings-backed invoice profile, redesigned PDF template | Shipped |
+| `ttf-004` | Cloudflare deployability, Wrangler setup, D1 migrations, and web auth hardening | Shipped |
 
 ## Operational Notes
 
@@ -50,6 +51,7 @@ flowchart LR
 - Invoice profile data is stored in the existing desktop `settings` key/value table.
 - Client profile fields added in `ttf-002` are reused by the invoice PDF in `ttf-003`.
 - Tauri capabilities must include binary FS write permission for PDF export.
+- Hosted deployment uses a single Cloudflare Worker to serve web assets and API routes, backed by D1.
 
 ## SDD Workflow
 

@@ -2,7 +2,7 @@ import { serve } from '@hono/node-server';
 import { createApiApp } from './app';
 import { signAccessToken, verifyAccessToken } from './lib/jwt';
 import { createNodeStore } from './lib/node-store';
-import { parseCorsOrigins } from './lib/runtime';
+import { parseCorsOrigins, parseRegistrationMode } from './lib/runtime';
 
 const port = Number.parseInt(process.env.PORT ?? '8787', 10);
 const jwtSecret = process.env.JWT_SECRET;
@@ -14,6 +14,7 @@ if (!jwtSecret) {
 const app = createApiApp({
   runtime: 'node',
   corsOrigins: parseCorsOrigins(process.env.CORS_ORIGIN),
+  registrationMode: parseRegistrationMode(process.env.REGISTRATION_MODE, 'open'),
   store: createNodeStore(),
   signAccessToken: (userId, email) => signAccessToken(jwtSecret, userId, email),
   verifyAccessToken: (token) => verifyAccessToken(jwtSecret, token),
