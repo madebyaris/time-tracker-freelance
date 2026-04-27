@@ -82,45 +82,66 @@ export function InvoicesView() {
           amount,
         });
       }
+      if (lineRows.length === 0) {
+        throw new Error('No billable entries in this range');
+      }
       const subtotal = lineRows.reduce((s, l) => s + l.amount, 0);
       const bps = Math.max(0, Math.round((parseFloat(taxPercent) || 0) * 100));
       const taxAmt = applyTax(subtotal, bps);
       const total = subtotal + taxAmt;
       const number = await Invoices.nextNumber();
-      const inv = await Invoices.createWithLines({
-        client_id: clientId,
+      const issuedAt = Date.now();
+      const dueAt = issuedAt + 30 * 86_400_000;
+
+      const [
+        fromName,
+        fromEmail,
+        fromAddress,
+        fromTaxId,
+        fromLogo,
+        fromSignature,
+        paymentInstructions,
+      ] = await Promise.all([
+        Settings.get('owner_name'),
+        Settings.get('owner_email'),
+        Settings.get('owner_address'),
+        Settings.get('owner_tax_id'),
+        Settings.get('owner_logo_data'),
+        Settings.get('owner_signature_data'),
+        Settings.get('owner_payment_instructions'),
+      ]);
+
+      const data: InvoiceData = {
         number,
-        issued_at: Date.now(),
-        due_at: Date.now() + 30 * 86_400_000,
+        issued_at: issuedAt,
+        due_at: dueAt,
         currency: c.currency,
         subtotal,
         tax_rate: bps,
+        tax_amount: taxAmt,
         total,
         notes: `Period ${fromStr} – ${toStr}`,
-        lines: lineRows.map((l) => ({
-          project_id: l.project_id,
-          description: l.description,
-          hours: l.hours,
-          rate: l.rate,
-          amount: l.amount,
-        })),
-      });
-      const fromName = (await Settings.get('owner_name')) || 'You';
-      const fromEmail = (await Settings.get('owner_email')) || undefined;
-      const data: InvoiceData = {
-        number: inv.number,
-        issued_at: inv.issued_at,
-        due_at: inv.due_at,
-        currency: c.currency,
-        subtotal: inv.subtotal,
-        tax_rate: bps,
-        tax_amount: taxAmt,
-        total: inv.total,
-        notes: inv.notes,
-        from: { name: fromName, email: fromEmail, address: null },
-        to: { name: c.name, email: c.email, address: null },
+        from: {
+          name: (fromName && fromName.trim()) || 'You',
+          email: fromEmail || null,
+          address: fromAddress || null,
+          tax_id: fromTaxId || null,
+          logo_data: fromLogo || null,
+        },
+        to: {
+          name: c.name,
+          email: c.email ?? null,
+          address: c.address ?? null,
+          tax_id: c.tax_id ?? null,
+          phone: c.phone ?? null,
+          website: c.website ?? null,
+        },
         lines: lineRows.map(({ project_id: _p, ...rest }) => rest),
+        payment_instructions: paymentInstructions || null,
+        signature_data: fromSignature || null,
+        signature_name: (fromName && fromName.trim()) || null,
       };
+
       const doc = <InvoiceDocument data={data} />;
       const blob = await pdf(doc).toBlob();
       const ab = await blob.arrayBuffer();
@@ -131,7 +152,35 @@ export function InvoicesView() {
         filters: [{ name: 'PDF', extensions: ['pdf'] }],
       });
       if (!out) return null;
-      await writeFile(out, new Uint8Array(ab));
+
+      try {
+        await writeFile(out, new Uint8Array(ab));
+      } catch (err) {
+        throw new Error(
+          `Could not save PDF to ${out}: ${
+            err instanceof Error ? err.message : 'unknown error'
+          }`,
+        );
+      }
+
+      const inv = await Invoices.createWithLines({
+        client_id: clientId,
+        number,
+        issued_at: issuedAt,
+        due_at: dueAt,
+        currency: c.currency,
+        subtotal,
+        tax_rate: bps,
+        total,
+        notes: data.notes ?? null,
+        lines: lineRows.map((l) => ({
+          project_id: l.project_id,
+          description: l.description,
+          hours: l.hours,
+          rate: l.rate,
+          amount: l.amount,
+        })),
+      });
       await Invoices.setPdfPath(inv.id, out);
       return out;
     },

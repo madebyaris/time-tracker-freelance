@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Button, Field, FieldHint, FieldLabel, Input } from '@ttf/ui';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { Button, Field, FieldHint, FieldLabel, Input, Textarea } from '@ttf/ui';
 import { Settings } from '../db/repos';
 import { runSync } from '../sync/engine';
 import { exportEntriesCsv } from '../lib/csv';
 import { startOfDay } from '@ttf/shared';
+import { encodeOwnerLogo, encodeSignature } from '../lib/encode-logo';
 
 export function SettingsView() {
   const [url, setUrl] = useState('');
@@ -11,6 +12,11 @@ export function SettingsView() {
   const [idleSecs, setIdleSecs] = useState('300');
   const [ownerName, setOwnerName] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
+  const [ownerAddress, setOwnerAddress] = useState('');
+  const [ownerTaxId, setOwnerTaxId] = useState('');
+  const [ownerLogo, setOwnerLogo] = useState<string | null>(null);
+  const [ownerSignature, setOwnerSignature] = useState<string | null>(null);
+  const [paymentInstructions, setPaymentInstructions] = useState('');
   const [status, setStatus] = useState<string>('');
 
   useEffect(() => {
@@ -20,6 +26,11 @@ export function SettingsView() {
       setIdleSecs((await Settings.get('idle_threshold_secs')) ?? '300');
       setOwnerName((await Settings.get('owner_name')) ?? '');
       setOwnerEmail((await Settings.get('owner_email')) ?? '');
+      setOwnerAddress((await Settings.get('owner_address')) ?? '');
+      setOwnerTaxId((await Settings.get('owner_tax_id')) ?? '');
+      setOwnerLogo((await Settings.get('owner_logo_data')) ?? null);
+      setOwnerSignature((await Settings.get('owner_signature_data')) ?? null);
+      setPaymentInstructions((await Settings.get('owner_payment_instructions')) ?? '');
     })();
   }, []);
 
@@ -29,6 +40,11 @@ export function SettingsView() {
     await Settings.set('idle_threshold_secs', idleSecs);
     await Settings.set('owner_name', ownerName.trim());
     await Settings.set('owner_email', ownerEmail.trim());
+    await Settings.set('owner_address', ownerAddress.trim());
+    await Settings.set('owner_tax_id', ownerTaxId.trim());
+    await Settings.set('owner_logo_data', ownerLogo ?? '');
+    await Settings.set('owner_signature_data', ownerSignature ?? '');
+    await Settings.set('owner_payment_instructions', paymentInstructions.trim());
     setStatus('Saved ✓');
     setTimeout(() => setStatus(''), 1500);
   }
@@ -60,8 +76,8 @@ export function SettingsView() {
       </header>
 
       <SettingsGroup
-        title="Your details"
-        description="Used as the “from” block on invoices."
+        title="Invoice profile"
+        description="Appears as the “from” block, header, and signature on every invoice PDF."
       >
         <div className="grid gap-3 sm:grid-cols-2">
           <Field>
@@ -77,6 +93,52 @@ export function SettingsView() {
             />
           </Field>
         </div>
+        <Field>
+          <FieldLabel>Address</FieldLabel>
+          <Textarea
+            rows={3}
+            placeholder={`Street line 1\nCity, Region ZIP\nCountry`}
+            value={ownerAddress}
+            onChange={(e) => setOwnerAddress(e.target.value)}
+          />
+        </Field>
+        <Field>
+          <FieldLabel>Tax ID / VAT number</FieldLabel>
+          <Input
+            placeholder="e.g. NPWP 00.000.000.0-000.000"
+            value={ownerTaxId}
+            onChange={(e) => setOwnerTaxId(e.target.value)}
+          />
+        </Field>
+
+        <ImageUploadField
+          label="Logo"
+          hint="PNG, JPEG, or WebP. Rendered up to 56×56 on the invoice header."
+          value={ownerLogo}
+          onChange={setOwnerLogo}
+          kind="logo"
+        />
+
+        <ImageUploadField
+          label="Signature"
+          hint="Transparent PNG works best. Shown above your printed name on invoices."
+          value={ownerSignature}
+          onChange={setOwnerSignature}
+          kind="signature"
+        />
+
+        <Field>
+          <FieldLabel>Payment instructions</FieldLabel>
+          <Textarea
+            rows={4}
+            placeholder={`Bank: ACME Bank\nAccount name: Your Name\nAccount #: 0000-0000-0000\nIBAN / SWIFT / routing: …`}
+            value={paymentInstructions}
+            onChange={(e) => setPaymentInstructions(e.target.value)}
+          />
+          <FieldHint>
+            Shown near the total on every invoice PDF. Use plain text; keep it short.
+          </FieldHint>
+        </Field>
       </SettingsGroup>
 
       <SettingsGroup
@@ -147,6 +209,98 @@ export function SettingsView() {
         </Button>
       </div>
     </div>
+  );
+}
+
+interface ImageUploadFieldProps {
+  label: string;
+  hint?: string;
+  value: string | null;
+  onChange: (next: string | null) => void;
+  kind: 'logo' | 'signature';
+}
+
+function ImageUploadField({ label, hint, value, onChange, kind }: ImageUploadFieldProps) {
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [encoding, setEncoding] = useState(false);
+
+  async function handleFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setError(null);
+    setEncoding(true);
+    try {
+      const result = kind === 'signature' ? await encodeSignature(file) : await encodeOwnerLogo(file);
+      if ('error' in result) {
+        setError(result.error);
+        return;
+      }
+      onChange(result.dataUrl);
+    } finally {
+      setEncoding(false);
+    }
+  }
+
+  const previewBackground =
+    kind === 'signature'
+      ? 'bg-[conic-gradient(at_10%_10%,#f4f4f5,white_25%,#f4f4f5_50%,white_75%,#f4f4f5)] dark:bg-zinc-950/40'
+      : 'bg-zinc-50 dark:bg-zinc-950/40';
+
+  return (
+    <Field>
+      <FieldLabel>{label}</FieldLabel>
+      <div className="flex items-start gap-3">
+        <div
+          className={`flex h-20 w-32 items-center justify-center overflow-hidden rounded-md border border-dashed border-zinc-300 ${previewBackground} dark:border-zinc-700`}
+        >
+          {value ? (
+            <img src={value} alt={`${label} preview`} className="max-h-full max-w-full object-contain" />
+          ) : (
+            <span className="text-[11px] uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+              No {label.toLowerCase()}
+            </span>
+          )}
+        </div>
+        <div className="flex flex-1 flex-col gap-1.5">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="hidden"
+            onChange={handleFile}
+          />
+          <div className="flex flex-wrap gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileRef.current?.click()}
+              disabled={encoding}
+            >
+              {encoding ? 'Encoding…' : value ? 'Replace' : 'Upload'}
+            </Button>
+            {value && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setError(null);
+                  onChange(null);
+                }}
+                disabled={encoding}
+              >
+                Remove
+              </Button>
+            )}
+          </div>
+          {error && <span className="text-xs text-red-600">{error}</span>}
+          {hint && !error && (
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">{hint}</span>
+          )}
+        </div>
+      </div>
+    </Field>
   );
 }
 
