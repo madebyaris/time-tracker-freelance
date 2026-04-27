@@ -65,9 +65,23 @@ Pause semantics in v1 = quick-stop (per plan §4 decision table). No new schema 
 - **Avatar palette source.** Plan suggested "8 zinc/indigo/emerald/amber/rose tints"; implementation uses `zinc · indigo · emerald · amber · rose · sky · violet · teal` so adjacent client names get visibly different colors.
 - **Logo encoder fallback.** When WebP isn't supported by the WKWebView build, the helper now silently falls back to PNG instead of erroring.
 - **Pause UX wording.** The icon-only top-right button says "Pause"; the secondary action under the project chip says "Stop & save". Both call the same finalise-now path; the dual labels make the consequence clear without two backend modes.
+- **QuickPanel dropdown reachability.** The project picker popover was clipped by the original short Tauri panel window. The panel window now reserves transparent vertical space (`height: 420`) and the picker opens upward, so the project list remains reachable.
+- **QuickPanel resize glitch.** A dynamic resize attempt fixed clipping but caused a visible click-position artifact. The final shipped approach uses a stable panel size instead of resizing during popover open/close.
+
+## Changelog
+
+### 2026-04-27 - Refinement: QuickPanel Project Picker Reachability
+
+**Context**: The project dropdown in the tray QuickPanel could open outside the visible 84px panel bounds, making the project list unreachable.
+
+**Change**: Increased the Tauri panel window height to reserve transparent dropdown space, made the combobox open on the top side in `QuickPanel`, and added backdrop click handling to hide the panel when clicking the transparent area.
+
+**Impact**: Users can select projects from the tray panel without fighting clipped popovers.
+
+**Decision**: Prefer a stable transparent panel height over dynamic Tauri window resizing because the dynamic resize path caused a visual glitch around the dropdown trigger.
 
 ## What's next (deferred)
 
-- Branded invoice PDFs that render `client.logo_data` (track in a future `ttf-003`).
+- True paid/unpaid invoice status and payment tracking, if invoice management grows beyond PDF export.
 - True paused state on `time_entries` if user feedback shows quick-stop loses context.
 - R2/S3 logo store if logos start exceeding 64 KB or row size becomes a hot spot.

@@ -35,6 +35,7 @@
 - [x] T5.1 `pnpm -r typecheck`, `cargo check`, `cargo test --lib`
 - [x] T5.2 Update `progress.md`, tick boxes in this file
 - [x] T5.3 `feature-brief.md` status flipped to "shipped"
+- [x] T5.4 Document QuickPanel project dropdown reachability fix and stable-height decision
 
 ## Progress log
 
@@ -45,3 +46,4 @@
 | Phase 2 done | Avatar + encode-logo + rich Clients form (subagent) — typecheck clean |
 | Phase 3+4 done | QuickPanel + global shortcut + Rust ticker + listener — typecheck + cargo check + 2 unit tests pass |
 | Phase 5 done | progress.md written, brief flipped to shipped |
+| 2026-04-27 | QuickPanel project dropdown clipping fixed with stable transparent panel height; dynamic resize glitch avoided |

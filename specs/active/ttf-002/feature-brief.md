@@ -24,7 +24,7 @@ A focused enhancement on top of the shipped Tickr (ttf-001) build. Three loosely
 
 - Cloud-hosted blob storage for logos (R2/S3) — base64 in the row is enough until logos get heavy.
 - True paused state on `time_entries` (a `paused_at` column + accumulator). v1 treats pause as quick-stop; resume starts a fresh entry pre-filled with the same description and project.
-- Branded invoice PDF templates that render the client logo — out of scope, will be `ttf-003`.
+- Branded invoice PDF templates — out of scope for `ttf-002`; shipped later as [`ttf-003`](../ttf-003/feature-brief.md).
 - System-wide hotkey escalation (currently uses Tauri's app-level global shortcut).
 
 ## SDD
