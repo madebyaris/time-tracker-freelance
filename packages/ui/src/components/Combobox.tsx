@@ -26,6 +26,7 @@ export interface ComboboxProps {
   contentClassName?: string;
   size?: 'sm' | 'md';
   align?: 'start' | 'center' | 'end';
+  side?: 'top' | 'right' | 'bottom' | 'left';
   disabled?: boolean;
   allowClear?: boolean;
   leading?: ReactNode;
@@ -43,6 +44,7 @@ export function Combobox({
   contentClassName,
   size = 'md',
   align = 'start',
+  side = 'bottom',
   disabled,
   allowClear = true,
   leading,
@@ -126,6 +128,7 @@ export function Combobox({
       <Popover.Portal>
         <Popover.Content
           align={align}
+          side={side}
           sideOffset={6}
           className={cn(
             'z-50 w-[--radix-popover-trigger-width] min-w-[200px] overflow-hidden rounded-lg border border-zinc-200 bg-white p-1 text-sm shadow-[0_8px_30px_-12px_rgba(0,0,0,0.18)] outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)]',

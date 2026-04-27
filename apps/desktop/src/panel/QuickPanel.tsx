@@ -149,7 +149,7 @@ export function QuickPanel() {
   const isPaused = running?.paused_at != null;
 
   return (
-    <div className="flex h-full items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white/95 px-4 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45)] backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/95">
+    <div className="flex h-[84px] w-full items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white/95 px-4 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45)] backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/95">
       <span
         aria-hidden
         className={cn(
@@ -184,6 +184,7 @@ export function QuickPanel() {
             onChange={setTarget}
             options={targetOptions}
             size="md"
+            side="top"
             placeholder="No project"
             searchPlaceholder="Find project or client…"
             emptyLabel="No matches"

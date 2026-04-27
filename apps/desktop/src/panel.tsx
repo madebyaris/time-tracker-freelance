@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, type MouseEvent } from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -46,7 +46,15 @@ function PanelApp() {
     };
   }, []);
 
-  return <QuickPanel />;
+  function hideWhenBackdropClicked(event: MouseEvent<HTMLDivElement>) {
+    if (event.target === event.currentTarget) void getCurrentWindow().hide();
+  }
+
+  return (
+    <div className="flex h-full items-end" onMouseDown={hideWhenBackdropClicked}>
+      <QuickPanel />
+    </div>
+  );
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

@@ -28,7 +28,7 @@
         "url": "panel.html",
         "title": "Tickr Quick Timer",
         "width": 760,
-        "height": 84,
+        "height": 420,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
