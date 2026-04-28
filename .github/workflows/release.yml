@@ -107,6 +107,9 @@ jobs:
       - name: Build Tauri app and bundle installers
         uses: tauri-apps/tauri-action@v0
         env:
+          # tauri-action always instantiates a GitHub API client (even when no
+          # release will be published), so the token must be present.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Ad-hoc sign the macOS bundle so it runs locally without an Apple
           # Developer ID. Gatekeeper still warns on first launch — see
           # `docs/install-unsigned.md` for the bypass instructions.
