@@ -52,6 +52,12 @@ export interface TimeEntry {
   billable: number;
   source: 'manual' | 'timer' | 'pomodoro' | 'calendar';
   idle_discarded_seconds: number;
+  /**
+   * Per-entry hourly rate override in cents/hour. When set, takes precedence
+   * over the project rate and the client's default rate for revenue + invoice
+   * calculations. See `lib/billing.ts`.
+   */
+  hourly_rate_cents_override: number | null;
   updated_at: number;
   deleted_at: number | null;
   device_id: string;
@@ -428,6 +434,9 @@ export const TimeEntries = {
         | 'ended_at'
         | 'description'
         | 'idle_discarded_seconds'
+        | 'hourly_rate_cents_override'
+        | 'paused_at'
+        | 'paused_seconds'
       > & { billable: boolean }
     >,
   ) {
@@ -453,13 +462,15 @@ export const TimeEntries = {
     started_at: number;
     ended_at: number;
     description?: string | null;
+    billable?: boolean;
+    hourly_rate_cents_override?: number | null;
   }): Promise<TimeEntry> {
     const id = nanoid();
     const device_id = await getDeviceId();
     const ts = now();
     await exec(
-      `INSERT INTO time_entries (id, project_id, client_id, started_at, ended_at, description, source, updated_at, device_id)
-       VALUES (?, ?, ?, ?, ?, ?, 'manual', ?, ?)`,
+      `INSERT INTO time_entries (id, project_id, client_id, started_at, ended_at, description, billable, source, hourly_rate_cents_override, updated_at, device_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', ?, ?, ?)`,
       [
         id,
         input.project_id ?? null,
@@ -467,6 +478,8 @@ export const TimeEntries = {
         input.started_at,
         input.ended_at,
         input.description ?? null,
+        input.billable === false ? 0 : 1,
+        input.hourly_rate_cents_override ?? null,
         ts,
         device_id,
       ],

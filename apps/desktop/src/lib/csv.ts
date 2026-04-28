@@ -2,6 +2,7 @@ import { save } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
 import { TimeEntries, Projects, Clients } from '../db/repos';
 import { entryDurationSeconds, formatDuration } from '@ttf/shared';
+import { getEntryBilling } from './billing';
 
 function escapeCsv(value: unknown): string {
   if (value === null || value === undefined) return '';
@@ -30,11 +31,19 @@ export async function exportEntriesCsv(opts: { from: number; to: number }): Prom
     'description',
     'billable',
     'source',
+    'rate_override_cents',
+    'effective_rate_cents',
+    'currency',
+    'revenue',
   ];
   const rows = entries.map((e) => {
     const dur = entryDurationSeconds(e);
-    const proj = e.project_id ? projById.get(e.project_id) : null;
-    const cli = proj?.client_id ? clientById.get(proj.client_id) : null;
+    const proj = e.project_id ? projById.get(e.project_id) ?? null : null;
+    const cli = (proj?.client_id ? clientById.get(proj.client_id) : null) ??
+      (e.client_id ? clientById.get(e.client_id) : null) ??
+      null;
+    const billing = getEntryBilling(e, proj, cli);
+    const revenue = billing.rate ? ((dur / 3600) * billing.rate) / 100 : 0;
     return [
       new Date(e.started_at).toISOString().slice(0, 10),
       new Date(e.started_at).toISOString(),
@@ -46,6 +55,10 @@ export async function exportEntriesCsv(opts: { from: number; to: number }): Prom
       e.description ?? '',
       e.billable ? 'yes' : 'no',
       e.source,
+      e.hourly_rate_cents_override ?? '',
+      billing.rate ?? '',
+      billing.currency ?? '',
+      billing.rate ? revenue.toFixed(2) : '',
     ].map(escapeCsv).join(',');
   });
   const csv = [header.join(','), ...rows].join('\n');

@@ -108,6 +108,9 @@ export const time_entries = sqliteTable(
       .notNull()
       .default('timer'),
     idle_discarded_seconds: integer('idle_discarded_seconds').notNull().default(0),
+    // Per-entry hourly rate override (cents/hour). When set, beats project
+    // and client default rates for revenue/invoice calculations.
+    hourly_rate_cents_override: integer('hourly_rate_cents_override'),
     updated_at: integer('updated_at').notNull(),
     deleted_at: integer('deleted_at'),
     device_id: text('device_id').notNull(),

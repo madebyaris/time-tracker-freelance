@@ -47,7 +47,9 @@ export function buildEntryTargetOptions(projects: Project[], clients: Client[]):
       label: client.name,
       initials: initialsOfName(client.name) || '·',
       group: 'Clients',
-      hint: client.currency,
+      hint: client.default_hourly_rate_cents
+        ? `${(client.default_hourly_rate_cents / 100).toFixed(0)} ${client.currency}/h`
+        : client.currency,
     });
   }
 

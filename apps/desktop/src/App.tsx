@@ -6,6 +6,7 @@ import { cn, TooltipProvider } from '@ttf/ui';
 import { TimerBar } from './components/TimerBar';
 import { TabBar, tabItems, type Tab } from './components/TabBar';
 import { DayView } from './views/DayView';
+import { TimeLogView } from './views/TimeLogView';
 import { TasksView } from './views/TasksView';
 import { ProjectsView } from './views/ProjectsView';
 import { ClientsView } from './views/ClientsView';
@@ -46,7 +47,7 @@ export function App() {
     };
   }, [start, stop, toggle]);
 
-  // Cmd+1..6 to switch tabs.
+  // Cmd+1..N to switch tabs (N = tabItems.length).
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (!(event.metaKey || event.ctrlKey)) return;
@@ -134,6 +135,7 @@ export function App() {
           <TimerBar />
           <main className="min-h-0 flex-1 overflow-auto">
             {tab === 'day' && <DayView />}
+            {tab === 'timeLog' && <TimeLogView />}
             {tab === 'tasks' && <TasksView />}
             {tab === 'projects' && <ProjectsView />}
             {tab === 'clients' && <ClientsView />}

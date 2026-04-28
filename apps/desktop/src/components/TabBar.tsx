@@ -3,6 +3,7 @@ import {
   BarChart3,
   BriefcaseBusiness,
   CalendarDays,
+  Clock4,
   FileText,
   FolderKanban,
   ListTodo,
@@ -12,6 +13,7 @@ import {
 
 export type Tab =
   | 'day'
+  | 'timeLog'
   | 'tasks'
   | 'projects'
   | 'clients'
@@ -26,12 +28,13 @@ export const tabItems: Array<{
   shortcut: string;
 }> = [
   { id: 'day', label: 'Today', icon: CalendarDays, shortcut: '1' },
-  { id: 'tasks', label: 'Tasks', icon: ListTodo, shortcut: '2' },
-  { id: 'projects', label: 'Projects', icon: FolderKanban, shortcut: '3' },
-  { id: 'clients', label: 'Clients', icon: BriefcaseBusiness, shortcut: '4' },
-  { id: 'reports', label: 'Reports', icon: BarChart3, shortcut: '5' },
-  { id: 'invoices', label: 'Invoices', icon: FileText, shortcut: '6' },
-  { id: 'settings', label: 'Settings', icon: Settings2, shortcut: '7' },
+  { id: 'timeLog', label: 'Time Log', icon: Clock4, shortcut: '2' },
+  { id: 'tasks', label: 'Tasks', icon: ListTodo, shortcut: '3' },
+  { id: 'projects', label: 'Projects', icon: FolderKanban, shortcut: '4' },
+  { id: 'clients', label: 'Clients', icon: BriefcaseBusiness, shortcut: '5' },
+  { id: 'reports', label: 'Reports', icon: BarChart3, shortcut: '6' },
+  { id: 'invoices', label: 'Invoices', icon: FileText, shortcut: '7' },
+  { id: 'settings', label: 'Settings', icon: Settings2, shortcut: '8' },
 ];
 
 export function TabBar({ value, onChange }: { value: Tab; onChange: (t: Tab) => void }) {

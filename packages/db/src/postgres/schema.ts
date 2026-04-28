@@ -155,6 +155,8 @@ export const time_entries = pgTable(
     billable: boolean('billable').notNull().default(true),
     source: entrySourceEnum('source').notNull().default('timer'),
     idle_discarded_seconds: integer('idle_discarded_seconds').notNull().default(0),
+    // Per-entry hourly rate override (cents/hour). See SQLite schema notes.
+    hourly_rate_cents_override: integer('hourly_rate_cents_override'),
     updated_at: bigint('updated_at', { mode: 'number' }).notNull(),
     deleted_at: bigint('deleted_at', { mode: 'number' }),
     device_id: text('device_id').notNull(),

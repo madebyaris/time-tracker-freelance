@@ -77,6 +77,7 @@ const syncTableColumns: Record<SyncableTableName, readonly string[]> = {
     'billable',
     'source',
     'idle_discarded_seconds',
+    'hourly_rate_cents_override',
     'updated_at',
     'deleted_at',
     'device_id',

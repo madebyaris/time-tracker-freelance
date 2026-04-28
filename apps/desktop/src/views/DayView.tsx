@@ -1,9 +1,16 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Button, Combobox, EmptyState, Field, FieldLabel, Input } from '@ttf/ui';
+import { Button, EmptyState } from '@ttf/ui';
 import { entryDurationSeconds, formatDuration, startOfDay } from '@ttf/shared';
 import { ChevronLeft, ChevronRight, Clock, Plus, Trash2, X } from 'lucide-react';
-import { TimeEntries, Projects, Clients, type TimeEntry } from '../db/repos';
+import {
+  Clients,
+  Projects,
+  TimeEntries,
+  type Client,
+  type Project,
+  type TimeEntry,
+} from '../db/repos';
 import { useTimer } from '../state/timer';
 import { liveQueryOptions, staticQueryOptions } from '../lib/query-client';
 import {
@@ -11,6 +18,13 @@ import {
   decodeEntryTarget,
   encodeEntryTarget,
 } from '../lib/time-entry-target';
+import { getEntryBilling } from '../lib/billing';
+import {
+  EntryFormFields,
+  centsToRateOverride,
+  rateOverrideToCents,
+  type EntryFormValue,
+} from '../components/EntryFormFields';
 
 function fmtTime(ts: number): string {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -34,42 +48,70 @@ function combineDateTime(dateValue: string, timeValue: string): number {
   return new Date(`${dateValue}T${timeValue}:00`).getTime();
 }
 
-function defaultManualRange(day: number): { date: string; start: string; end: string } {
+function defaultManualForm(day: number): EntryFormValue {
   const today = startOfDay(Date.now());
+  let date: string;
+  let start: string;
+  let end: string;
+
   if (day === today) {
-    const end = new Date();
-    end.setSeconds(0, 0);
-    end.setMinutes(Math.floor(end.getMinutes() / 5) * 5);
-    const start = new Date(end.getTime() - 60 * 60 * 1000);
-    return {
-      date: dateInputValue(end.getTime()),
-      start: timeInputValue(start.getTime()),
-      end: timeInputValue(end.getTime()),
-    };
+    const endDate = new Date();
+    endDate.setSeconds(0, 0);
+    endDate.setMinutes(Math.floor(endDate.getMinutes() / 5) * 5);
+    const startDate = new Date(endDate.getTime() - 60 * 60 * 1000);
+    date = dateInputValue(endDate.getTime());
+    start = timeInputValue(startDate.getTime());
+    end = timeInputValue(endDate.getTime());
+  } else {
+    date = dateInputValue(day);
+    start = '09:00';
+    end = '10:00';
   }
 
   return {
-    date: dateInputValue(day),
-    start: '09:00',
-    end: '10:00',
+    description: '',
+    target: null,
+    date,
+    start,
+    end,
+    billable: true,
+    rateOverride: '',
   };
+}
+
+function entryToFormValue(entry: TimeEntry): EntryFormValue {
+  return {
+    description: entry.description ?? '',
+    target: encodeEntryTarget(entry.project_id, entry.client_id),
+    date: dateInputValue(entry.started_at),
+    start: timeInputValue(entry.started_at),
+    end: entry.ended_at ? timeInputValue(entry.ended_at) : '',
+    billable: !!entry.billable,
+    rateOverride: centsToRateOverride(entry.hourly_rate_cents_override),
+  };
+}
+
+function resolveTargetContext(
+  target: string | null,
+  projById: Map<string, Project>,
+  clientById: Map<string, Client>,
+): { project: Project | null; client: Client | null } {
+  const decoded = decodeEntryTarget(target);
+  const project = decoded.project_id ? projById.get(decoded.project_id) ?? null : null;
+  const client = decoded.client_id
+    ? clientById.get(decoded.client_id) ?? null
+    : project?.client_id
+      ? clientById.get(project.client_id) ?? null
+      : null;
+  return { project, client };
 }
 
 export function DayView() {
   const [day, setDay] = useState(() => startOfDay(Date.now()));
   const [showManualForm, setShowManualForm] = useState(false);
-  const [manualDescription, setManualDescription] = useState('');
-  const [manualTarget, setManualTarget] = useState<string | null>(null);
-  const manualDefaults = defaultManualRange(day);
-  const [manualDate, setManualDate] = useState(manualDefaults.date);
-  const [manualStart, setManualStart] = useState(manualDefaults.start);
-  const [manualEnd, setManualEnd] = useState(manualDefaults.end);
+  const [manualForm, setManualForm] = useState<EntryFormValue>(() => defaultManualForm(day));
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDescription, setEditDescription] = useState('');
-  const [editTarget, setEditTarget] = useState<string | null>(null);
-  const [editDate, setEditDate] = useState(manualDefaults.date);
-  const [editStart, setEditStart] = useState(manualDefaults.start);
-  const [editEnd, setEditEnd] = useState(manualDefaults.end);
+  const [editForm, setEditForm] = useState<EntryFormValue>(() => defaultManualForm(day));
   useTimer((s) => s.tick);
   const running = useTimer((s) => s.running);
   const qc = useQueryClient();
@@ -89,12 +131,47 @@ export function DayView() {
     queryFn: () => Clients.list(),
     ...staticQueryOptions,
   });
-  const projById = new Map((projectsQ.data ?? []).map((p) => [p.id, p]));
-  const clientById = new Map((clientsQ.data ?? []).map((c) => [c.id, c]));
-  const targetOptions = buildEntryTargetOptions(
-    projectsQ.data ?? [],
-    (clientsQ.data ?? []).filter((client) => !client.archived_at),
+  const projById = useMemo(
+    () => new Map((projectsQ.data ?? []).map((p) => [p.id, p])),
+    [projectsQ.data],
   );
+  const clientById = useMemo(
+    () => new Map((clientsQ.data ?? []).map((c) => [c.id, c])),
+    [clientsQ.data],
+  );
+  const targetOptions = useMemo(
+    () =>
+      buildEntryTargetOptions(
+        projectsQ.data ?? [],
+        (clientsQ.data ?? []).filter((client) => !client.archived_at),
+      ),
+    [projectsQ.data, clientsQ.data],
+  );
+
+  const manualContext = resolveTargetContext(manualForm.target, projById, clientById);
+  const manualInheritedRate =
+    manualContext.project?.hourly_rate ??
+    manualContext.client?.default_hourly_rate_cents ??
+    null;
+  const manualInheritedSource: 'project' | 'client' | null = manualContext.project?.hourly_rate
+    ? 'project'
+    : manualContext.client?.default_hourly_rate_cents
+      ? 'client'
+      : null;
+  const manualCurrency =
+    manualContext.project?.currency ?? manualContext.client?.currency ?? 'USD';
+
+  const editContext = resolveTargetContext(editForm.target, projById, clientById);
+  const editInheritedRate =
+    editContext.project?.hourly_rate ??
+    editContext.client?.default_hourly_rate_cents ??
+    null;
+  const editInheritedSource: 'project' | 'client' | null = editContext.project?.hourly_rate
+    ? 'project'
+    : editContext.client?.default_hourly_rate_cents
+      ? 'client'
+      : null;
+  const editCurrency = editContext.project?.currency ?? editContext.client?.currency ?? 'USD';
 
   const displayEntries = useMemo(() => {
     const entries = [...(entriesQ.data ?? [])];
@@ -117,7 +194,9 @@ export function DayView() {
   const billableSeconds = displayEntries
     .filter((entry) => {
       const project = entry.project_id ? projById.get(entry.project_id) : null;
-      return entry.billable && project?.hourly_rate;
+      const client = (project?.client_id ? clientById.get(project.client_id) : null) ??
+        (entry.client_id ? clientById.get(entry.client_id) : null);
+      return getEntryBilling(entry, project ?? null, client ?? null).rate;
     })
     .reduce((sum, e) => sum + entryDurationSeconds(e), 0);
 
@@ -129,9 +208,9 @@ export function DayView() {
   });
   const createManual = useMutation({
     mutationFn: async () => {
-      const decoded = decodeEntryTarget(manualTarget);
-      const startedAt = combineDateTime(manualDate, manualStart);
-      const endedAt = combineDateTime(manualDate, manualEnd);
+      const decoded = decodeEntryTarget(manualForm.target);
+      const startedAt = combineDateTime(manualForm.date, manualForm.start);
+      const endedAt = combineDateTime(manualForm.date, manualForm.end);
 
       if (Number.isNaN(startedAt) || Number.isNaN(endedAt)) {
         throw new Error('Enter a valid date and time range');
@@ -145,7 +224,9 @@ export function DayView() {
         client_id: decoded.client_id,
         started_at: startedAt,
         ended_at: endedAt,
-        description: manualDescription.trim() || null,
+        description: manualForm.description.trim() || null,
+        billable: manualForm.billable,
+        hourly_rate_cents_override: rateOverrideToCents(manualForm.rateOverride),
       });
     },
     onSuccess: () => {
@@ -161,9 +242,9 @@ export function DayView() {
       const entry = (entriesQ.data ?? []).find((item) => item.id === editingId);
       if (!entry || !entry.ended_at) throw new Error('Only completed entries can be edited');
 
-      const decoded = decodeEntryTarget(editTarget);
-      const startedAt = combineDateTime(editDate, editStart);
-      const endedAt = combineDateTime(editDate, editEnd);
+      const decoded = decodeEntryTarget(editForm.target);
+      const startedAt = combineDateTime(editForm.date, editForm.start);
+      const endedAt = combineDateTime(editForm.date, editForm.end);
 
       if (Number.isNaN(startedAt) || Number.isNaN(endedAt)) {
         throw new Error('Enter a valid date and time range');
@@ -172,12 +253,20 @@ export function DayView() {
         throw new Error('End time must be after start time');
       }
 
+      // When the user edits the time range manually, the previous pause
+      // accounting no longer matches the new window — replace it cleanly.
+      const timesChanged =
+        startedAt !== entry.started_at || endedAt !== entry.ended_at;
+
       return TimeEntries.update(editingId, {
         project_id: decoded.project_id,
         client_id: decoded.client_id,
         started_at: startedAt,
         ended_at: endedAt,
-        description: editDescription.trim() || null,
+        description: editForm.description.trim() || null,
+        billable: editForm.billable,
+        hourly_rate_cents_override: rateOverrideToCents(editForm.rateOverride),
+        ...(timesChanged ? { paused_at: null, paused_seconds: 0 } : {}),
       });
     },
     onSuccess: () => {
@@ -195,12 +284,7 @@ export function DayView() {
   });
 
   function resetManualForm(nextDay: number) {
-    const defaults = defaultManualRange(nextDay);
-    setManualDescription('');
-    setManualTarget(null);
-    setManualDate(defaults.date);
-    setManualStart(defaults.start);
-    setManualEnd(defaults.end);
+    setManualForm(defaultManualForm(nextDay));
   }
 
   function openManualForm() {
@@ -209,28 +293,16 @@ export function DayView() {
     setShowManualForm(true);
   }
 
-  function populateEditForm(entry: TimeEntry) {
-    setEditDescription(entry.description ?? '');
-    setEditTarget(encodeEntryTarget(entry.project_id, entry.client_id));
-    setEditDate(dateInputValue(entry.started_at));
-    setEditStart(timeInputValue(entry.started_at));
-    setEditEnd(entry.ended_at ? timeInputValue(entry.ended_at) : '');
-  }
-
   function closeEditForm() {
     updateEntry.reset();
     setEditingId(null);
-    setEditDescription('');
-    setEditTarget(null);
-    setEditDate(manualDefaults.date);
-    setEditStart(manualDefaults.start);
-    setEditEnd(manualDefaults.end);
+    setEditForm(defaultManualForm(day));
   }
 
   function openEditForm(entry: TimeEntry) {
     createManual.reset();
     setShowManualForm(false);
-    populateEditForm(entry);
+    setEditForm(entryToFormValue(entry));
     setEditingId(entry.id);
   }
 
@@ -312,17 +384,12 @@ export function DayView() {
 
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <EntryFormFields
-              description={manualDescription}
-              onDescriptionChange={setManualDescription}
-              target={manualTarget}
-              onTargetChange={setManualTarget}
+              value={manualForm}
+              onChange={setManualForm}
               targetOptions={targetOptions}
-              date={manualDate}
-              onDateChange={setManualDate}
-              start={manualStart}
-              onStartChange={setManualStart}
-              end={manualEnd}
-              onEndChange={setManualEnd}
+              rateCurrency={manualCurrency}
+              inheritedRateCents={manualInheritedRate}
+              inheritedRateSource={manualInheritedSource}
             />
           </div>
 
@@ -401,17 +468,12 @@ export function DayView() {
 
                     <div className="mt-4 grid gap-3 md:grid-cols-2">
                       <EntryFormFields
-                        description={editDescription}
-                        onDescriptionChange={setEditDescription}
-                        target={editTarget}
-                        onTargetChange={setEditTarget}
+                        value={editForm}
+                        onChange={setEditForm}
                         targetOptions={targetOptions}
-                        date={editDate}
-                        onDateChange={setEditDate}
-                        start={editStart}
-                        onStartChange={setEditStart}
-                        end={editEnd}
-                        onEndChange={setEditEnd}
+                        rateCurrency={editCurrency}
+                        inheritedRateCents={editInheritedRate}
+                        inheritedRateSource={editInheritedSource}
                       />
                     </div>
 
@@ -503,67 +565,5 @@ function SummaryStat({ label, value }: { label: string; value: string }) {
         {value}
       </div>
     </div>
-  );
-}
-
-function EntryFormFields({
-  description,
-  onDescriptionChange,
-  target,
-  onTargetChange,
-  targetOptions,
-  date,
-  onDateChange,
-  start,
-  onStartChange,
-  end,
-  onEndChange,
-}: {
-  description: string;
-  onDescriptionChange: (value: string) => void;
-  target: string | null;
-  onTargetChange: (value: string | null) => void;
-  targetOptions: ReturnType<typeof buildEntryTargetOptions>;
-  date: string;
-  onDateChange: (value: string) => void;
-  start: string;
-  onStartChange: (value: string) => void;
-  end: string;
-  onEndChange: (value: string) => void;
-}) {
-  return (
-    <>
-      <Field className="md:col-span-2">
-        <FieldLabel>Task</FieldLabel>
-        <Input
-          value={description}
-          onChange={(event) => onDescriptionChange(event.target.value)}
-          placeholder="What were you working on?"
-        />
-      </Field>
-      <Field className="md:col-span-2">
-        <FieldLabel>Project or client</FieldLabel>
-        <Combobox
-          value={target}
-          onChange={onTargetChange}
-          options={targetOptions}
-          placeholder="No project"
-          searchPlaceholder="Find project or client…"
-          emptyLabel="No projects or clients yet"
-        />
-      </Field>
-      <Field>
-        <FieldLabel>Date</FieldLabel>
-        <Input type="date" value={date} onChange={(event) => onDateChange(event.target.value)} />
-      </Field>
-      <Field>
-        <FieldLabel>Start</FieldLabel>
-        <Input type="time" value={start} onChange={(event) => onStartChange(event.target.value)} />
-      </Field>
-      <Field>
-        <FieldLabel>End</FieldLabel>
-        <Input type="time" value={end} onChange={(event) => onEndChange(event.target.value)} />
-      </Field>
-    </>
   );
 }

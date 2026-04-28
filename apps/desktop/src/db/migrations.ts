@@ -189,4 +189,11 @@ export const migrations: Migration[] = [
       ALTER TABLE time_entries ADD COLUMN paused_seconds INTEGER NOT NULL DEFAULT 0;
     `,
   },
+  {
+    version: 6,
+    name: 'time_entries_rate_override',
+    sql: `
+      ALTER TABLE time_entries ADD COLUMN hourly_rate_cents_override INTEGER;
+    `,
+  },
 ];

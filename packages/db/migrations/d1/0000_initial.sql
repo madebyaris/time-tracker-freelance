@@ -108,6 +108,7 @@ CREATE TABLE IF NOT EXISTS time_entries (
   billable INTEGER NOT NULL DEFAULT 1,
   source TEXT NOT NULL DEFAULT 'timer',
   idle_discarded_seconds INTEGER NOT NULL DEFAULT 0,
+  hourly_rate_cents_override INTEGER,
   updated_at INTEGER NOT NULL,
   deleted_at INTEGER,
   device_id TEXT NOT NULL,

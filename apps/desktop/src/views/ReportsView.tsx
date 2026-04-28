@@ -16,6 +16,7 @@ import { EmptyState, SegmentedControl } from '@ttf/ui';
 import { entryDurationSeconds, formatDuration, formatMoney, startOfDay } from '@ttf/shared';
 import { BarChart3 } from 'lucide-react';
 import { Clients, Projects, TimeEntries } from '../db/repos';
+import { getEntryBilling } from '../lib/billing';
 import { liveQueryOptions, staticQueryOptions } from '../lib/query-client';
 
 type Range = '7d' | '30d' | '90d';
@@ -86,14 +87,15 @@ export function ReportsView() {
       const name = proj?.name ?? (client ? `${client.name} (no project)` : 'No project');
       const color = proj?.color ?? '#71717a';
       const secs = entryDurationSeconds(e);
-      const revenue = e.billable && proj?.hourly_rate ? (secs / 3600) * proj.hourly_rate : 0;
+      const billing = getEntryBilling(e, proj ?? null, client ?? null);
+      const revenue = billing.rate ? (secs / 3600) * billing.rate : 0;
       const cur = totals.get(key) ?? {
         key,
         name,
         color,
         seconds: 0,
         revenue: 0,
-        currency: proj?.currency ?? null,
+        currency: billing.currency,
       };
       cur.seconds += secs;
       cur.revenue += revenue;

@@ -25,6 +25,7 @@ import { Clients, Invoices, Projects, TimeEntries } from '../db/repos';
 import { Settings } from '../db/repos';
 import { open } from '@tauri-apps/plugin-shell';
 import { liveQueryOptions, staticQueryOptions } from '../lib/query-client';
+import { getEntryBilling } from '../lib/billing';
 
 function monthRange(): { from: number; to: number } {
   const now = new Date();
@@ -68,17 +69,19 @@ export function InvoicesView() {
       const projById = new Map((projectsQ.data ?? []).map((p) => [p.id, p]));
       const lineRows: Array<InvoiceLineData & { project_id: string | null }> = [];
       for (const e of entries) {
-        if (!e.project_id) continue;
-        const p = projById.get(e.project_id);
-        if (!p?.hourly_rate) continue;
+        const project = e.project_id ? projById.get(e.project_id) ?? null : null;
+        // Use entry → project → client billing precedence so overrides and
+        // client-only entries show up on the invoice (not just project ones).
+        const billing = getEntryBilling(e, project, c);
+        if (!billing.rate) continue;
         const secs = entryDurationSeconds(e);
         const h = secondsToHundredthsOfHour(secs);
-        const amount = lineAmount(h, p.hourly_rate);
+        const amount = lineAmount(h, billing.rate);
         lineRows.push({
           project_id: e.project_id,
-          description: e.description || p.name,
+          description: e.description || project?.name || c.name,
           hours: h,
-          rate: p.hourly_rate,
+          rate: billing.rate,
           amount,
         });
       }
@@ -237,8 +240,8 @@ export function InvoicesView() {
           </Field>
         </div>
         <FieldHint className="mt-3">
-          Pulls billable entries on projects linked to the client, groups them by line, and saves a
-          PDF.
+          Pulls billable entries linked to the client (project entries and client-only entries),
+          honors per-entry rate overrides, groups them by line, and saves a PDF.
         </FieldHint>
         <div className="mt-4 flex items-center justify-end gap-2">
           {generate.error && (
