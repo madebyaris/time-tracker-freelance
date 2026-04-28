@@ -4,4 +4,4 @@ export * from './money';
 export { nanoid } from 'nanoid';
 
 export const APP_NAME = 'Tickr';
-export const APP_VERSION = '0.1.0';
+export const APP_VERSION = '0.5.0';

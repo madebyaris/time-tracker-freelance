@@ -1,6 +1,6 @@
 {
   "name": "time-tracker-freelance",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "private": true,
   "description": "Indie freelancer time tracker — local-first macOS app with optional self-hostable backend",
   "packageManager": "pnpm@10.30.3",

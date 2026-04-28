@@ -91,6 +91,16 @@ Build the desktop app:
 pnpm desktop:build
 ```
 
+### Pre-Built Installers
+
+Tagged releases publish installers for macOS (Apple Silicon + Intel),
+Windows, and Linux on the [GitHub Releases page](../../releases).
+
+These builds are not signed by an Apple Developer ID or an EV Windows
+certificate, so Gatekeeper / SmartScreen will warn you on first launch. See
+[docs/install-unsigned.md](docs/install-unsigned.md) for the one-time bypass
+steps for each platform.
+
 Useful shortcuts:
 
 | Shortcut | Action |
