@@ -109,7 +109,7 @@ Read in order:
 - "Mark #N as outdated" - Code correct, update spec
 ```
 
-*Audit report generated with SDD 5.0*
+*Audit report generated with SDD 5.1*
 
 ---
 

@@ -1,4 +1,4 @@
-# Spec-Driven Development Guidelines v5.0
+# Spec-Driven Development Guidelines v5.1
 
 ## Overview
 

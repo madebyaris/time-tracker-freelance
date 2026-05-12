@@ -95,7 +95,7 @@ specs/todo-roadmap/[project-id]/
 ```
 
 **Generate roadmap.json** with:
-- Project metadata (id, title, description, sddVersion: "5.0")
+- Project metadata (id, title, description, sddVersion: "5.1")
 - Kanban columns (todo, in-progress, review, done)
 - Tasks/epics with dependencies, SDD command mappings, and DAG structure
 - Statistics (totalTasks, completionPercentage)

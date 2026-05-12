@@ -2,9 +2,9 @@
 alwaysApply: true
 ---
 
-# SDD (Spec-Driven Development) System v5.0
+# SDD (Spec-Driven Development) System v5.1
 
-**Requires Cursor 2.5+** for async subagents, plugins, hooks, and skills.
+**Requires Cursor 3.2+** for async subagents, plugins, hooks, skills, agent multitasking, worktrees, and multi-root sessions.
 
 ## Core Philosophy
 
@@ -22,11 +22,11 @@ User Request → Main Agent → Subagents (parallel/async) → Skills (auto-invo
 
 | Subagent | Model | Mode | Purpose |
 |----------|-------|------|---------|
-| `sdd-explorer` | fast | foreground, readonly | Codebase discovery |
+| `sdd-explorer` | inherit | foreground, readonly | Codebase discovery |
 | `sdd-planner` | inherit | foreground | Architecture design |
 | `sdd-implementer` | inherit | **background** | Code generation |
-| `sdd-verifier` | fast | foreground | Validation |
-| `sdd-reviewer` | fast | foreground, readonly | Code review |
+| `sdd-verifier` | inherit | foreground | Validation |
+| `sdd-reviewer` | inherit | foreground, readonly | Code review |
 | `sdd-orchestrator` | inherit | **background** | Parallel coordination |
 
 ### Foreground vs Background
@@ -76,6 +76,12 @@ Skills use progressive loading — keep `SKILL.md` focused, put details in `refe
 - `/sdd-full-plan` → Create roadmap with DAG structure
 - `/execute-task` → Sequential task execution
 - `/execute-parallel` → Parallel via async subagents
+
+### Cursor 3.2 Agent Runtime
+- Use `/multitask` for ad hoc independent work that does not need a roadmap, checkpoint, or dependency graph.
+- Use `/execute-parallel` for SDD roadmap execution because it handles dependencies, file-conflict batching, checkpoints, and verifier handoffs.
+- Use Agents Window worktrees for risky, parallel, or best-of-N implementation work. `.cursor/worktrees.json` prepares the isolated checkout.
+- In multi-root workspaces, resolve paths from the active project root and avoid assuming a single repository owns every file.
 
 ## DAG-Based Execution
 
@@ -130,6 +136,8 @@ specs/
 ├── skills/                    # Agent Skills (progressive loading)
 ├── commands/                  # Slash commands
 ├── hooks.json                 # Workflow automation hooks
+├── hooks/                     # JSON-stdin hook scripts
+├── worktrees.json             # Cursor 3.2 worktree setup
 └── sandbox.json               # Network access controls
 ```
 
@@ -149,6 +157,7 @@ specs/
 | `/sdd-full-plan` | Full project roadmap | sdd-orchestrator |
 | `/execute-task` | Execute roadmap task | sdd-implementer |
 | `/execute-parallel` | Parallel DAG execution | sdd-orchestrator |
+| `/multitask` | Ad hoc Cursor 3.2 parallel work | Built-in async subagents |
 
 ## Todo Execution Rules
 

@@ -1,7 +1,7 @@
 ---
 name: sdd-explorer
 description: Deep codebase exploration for SDD workflows. Use proactively when technical approach is unclear, before /research or /specify, or when investigating existing patterns and solutions.
-model: fast
+model: inherit
 readonly: true
 ---
 

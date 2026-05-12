@@ -1,12 +1,12 @@
 # Roadmap Format Specification
 
 **Version:** 2.0.0  
-**Compatible With:** SDD 5.0, Taskr Kanban, VSCode Extensions, Cursor 2.5+  
+**Compatible With:** SDD 5.1, Taskr Kanban, VSCode Extensions, Cursor 3.2+  
 **Last Updated:** 2026-02-18
 
-## Cursor 2.5 Integration
+## Cursor 3.2 Integration
 
-This format works seamlessly with Cursor 2.5 features:
+This format works seamlessly with Cursor 3.2 features:
 
 - **Async Subagents** - Execute multiple tasks in parallel via `sdd-orchestrator`
 - **Subagent Tree** - Nested subagent spawning for complex task execution
@@ -73,7 +73,7 @@ interface Roadmap {
   
   // Metadata
   metadata: {
-    sddVersion: string;           // SDD version (e.g., "5.0")
+    sddVersion: string;           // SDD version (e.g., "5.1")
     planMode: boolean;            // PLAN mode enabled
     estimatedDuration: string;    // e.g., "8 weeks"
     complexity: Complexity;       // "simple" | "medium" | "complex" | "enterprise"
@@ -542,9 +542,12 @@ See [FULL_PLAN_EXAMPLES.md](./FULL_PLAN_EXAMPLES.md) for complete examples of:
 
 ## Versioning
 
-**Current Version:** 2.0.0
+**Current Version:** 2.1.0
 
 **Version History:**
+- **2.1.0** (2026-05-01): SDD 5.1 / Cursor 3.2 update
+  - Cursor 3.2 multitask, worktree, and multi-root alignment
+  - SDD version metadata bumped to 5.1
 - **2.0.0** (2026-02-18): SDD 5.0 / Cursor 2.5 update
   - Async subagent execution support
   - DAG-based parallel task resolution

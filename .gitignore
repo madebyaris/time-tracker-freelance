@@ -27,6 +27,9 @@ target/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+.cursor/logs/
+__pycache__/
+*.py[cod]
 
 # OS
 .DS_Store

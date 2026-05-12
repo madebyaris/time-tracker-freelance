@@ -174,7 +174,7 @@ Does this capture what you want? Ready to create the spec?
 2. Resolve open questions
 3. Run `/plan [task-id]` to create technical plan
 
-*Specification created with SDD 5.0*
+*Specification created with SDD 5.1*
 ```
 
 ### Phase 4: Verification

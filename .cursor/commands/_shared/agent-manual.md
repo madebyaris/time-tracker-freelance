@@ -1,6 +1,6 @@
-# SDD Agent Manual (v5.0)
+# SDD Agent Manual (v5.1)
 
-Consolidated agent protocol for SDD workflows. **Requires Cursor 2.5+** for async subagents, hooks, and plugins.
+Consolidated agent protocol for SDD workflows. **Requires Cursor 3.2+** for async subagents, hooks, plugins, agent multitasking, worktrees, and multi-root sessions.
 
 ---
 
@@ -42,13 +42,15 @@ specs/
 ├── skills/                     # Domain knowledge packages
 ├── commands/                   # Slash commands
 ├── hooks.json                  # Workflow automation hooks
+├── hooks/                      # JSON-stdin hook scripts
+├── worktrees.json              # Cursor worktree setup
 ├── sandbox.json                # Network access controls
 └── rules/                      # Always-applied rules
 ```
 
 ---
 
-## Subagents (Cursor 2.5+)
+## Subagents (Cursor 3.2+)
 
 Subagents run in **isolated context**. Use them for operations that would bloat the main conversation.
 
@@ -56,11 +58,11 @@ Subagents run in **isolated context**. Use them for operations that would bloat 
 
 | Subagent | Purpose | Model | Mode |
 |----------|---------|-------|------|
-| `sdd-explorer` | Codebase discovery | fast | foreground, readonly |
+| `sdd-explorer` | Codebase discovery | inherit | foreground, readonly |
 | `sdd-planner` | Architecture design | inherit | foreground |
 | `sdd-implementer` | Code generation | inherit | **background** |
-| `sdd-verifier` | Validation | fast | foreground |
-| `sdd-reviewer` | Pre-merge code review | fast | foreground, readonly |
+| `sdd-verifier` | Validation | inherit | foreground |
+| `sdd-reviewer` | Pre-merge code review | inherit | foreground, readonly |
 | `sdd-orchestrator` | Coordination | inherit | **background** |
 
 ### Foreground vs Background
@@ -103,12 +105,20 @@ Use the Task tool to spawn subagents:
 [Use Task tool with:]
 - subagent_type: "sdd-implementer" (or other agent name)
 - prompt: Detailed instructions with all necessary context
-- model: "fast" for exploration, omit for inherit
+- model: omit for inherit, or use an exact Cursor-supported model ID when a specific model is required
 ```
 
 **Parallel execution:** Send multiple Task tool calls in a single message.
 
 **Background subagents:** Set `is_background: true` in the agent file. The parent continues working while the subagent runs.
+
+### Cursor 3.2 Multitask and Worktrees
+
+Use Cursor 3.2's native `/multitask` for ad hoc independent requests, especially when there is no SDD roadmap to update. Use SDD `/execute-parallel` when work must respect roadmap dependencies, file-conflict batching, checkpoints, or mandatory verifier handoffs.
+
+Use Agents Window worktrees for parallel or risky implementation attempts. `.cursor/worktrees.json` prepares the isolated checkout; keep setup commands lightweight and avoid assuming one package manager unless the target project declares one.
+
+For multi-root workspaces, always resolve generated files, hooks, specs, and roadmap updates from the active project root. Do not write cross-repo state unless the command explicitly targets that root.
 
 ### Automatic Verification
 
@@ -134,7 +144,7 @@ These two agents serve distinct purposes — do not confuse them:
 
 ---
 
-## Skills (Cursor 2.5+)
+## Skills (Cursor 3.2+)
 
 Skills are auto-invoked based on context or manually via `/skill-name`.
 
@@ -162,7 +172,7 @@ Skills use progressive loading — keep main `SKILL.md` focused:
 
 ---
 
-## Hooks (Cursor 2.5+)
+## Hooks (Cursor 3.2+)
 
 SDD uses hooks (`.cursor/hooks.json`) for workflow automation:
 
@@ -179,7 +189,7 @@ Hooks are compatible with Claude Code format (`.claude/settings.json`). Hook nam
 
 ---
 
-## Sandbox (Cursor 2.5+)
+## Sandbox (Cursor 3.2+)
 
 Network access controls for sandboxed commands are configured in `.cursor/sandbox.json`:
 
@@ -271,7 +281,7 @@ Batch 2 (deps satisfied):
 ### Parallel Efficiency
 - Identify independent tasks early
 - Spawn multiple subagents in single message
-- Use `model: fast` for exploration tasks
+- Prefer inherited models for custom agents unless an exact Cursor-supported model ID is required
 - Use background mode for long-running work
 
 ### Verification
@@ -281,10 +291,10 @@ Batch 2 (deps satisfied):
 - Compare code to spec requirements
 
 ### Hooks Integration
-- `subagentStop` hook tracks completion automatically
+- `subagentStop` hook tracks completion automatically in local ignored logs under `.cursor/logs/`
 - Use hooks for consistent file output processing
 - Claude Code hooks are compatible via `.claude/settings.json`
 
 ---
 
-*SDD Agent Manual v5.0 — Cursor 2.5+ (Async Subagents + Hooks + Plugins)*
+*SDD Agent Manual v5.1 — Cursor 3.2 optimized (Async Subagents + Hooks + Worktrees + Multi-root)*

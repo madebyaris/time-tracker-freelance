@@ -103,7 +103,7 @@ Spawn `sdd-verifier` subagent to independently validate:
 - [ ] Tests pass (if applicable)
 - [ ] Spec requirements met
 
-The `subagentStop` hook in `.cursor/hooks.json` auto-logs completion.
+The `subagentStop` hook in `.cursor/hooks.json` auto-logs completion to ignored local logs under `.cursor/logs/`.
 
 ---
 
@@ -146,7 +146,7 @@ The `subagentStop` hook in `.cursor/hooks.json` auto-logs completion.
 
 ## Subagent Delegation
 
-For long implementations, the main agent delegates to `sdd-implementer` (background subagent). The implementer spawns `sdd-verifier` as a child subagent after completing work — this is the subagent tree pattern from Cursor 2.5+.
+For long implementations, the main agent delegates to `sdd-implementer` (background subagent). The implementer spawns `sdd-verifier` as a child subagent after completing work — this is the subagent tree pattern supported by Cursor 3.2+.
 
 ## Related Commands
 

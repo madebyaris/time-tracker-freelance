@@ -153,7 +153,7 @@ I understand the project well, create everything at once.
   "type": "feature",
   "complexity": "simple",
   "metadata": {
-    "sddVersion": "5.0",
+    "sddVersion": "5.1",
     "planMode": true,
     "estimatedDuration": "2 weeks",
     "complexity": "simple"
@@ -310,7 +310,7 @@ Approve this plan?
   "type": "application",
   "complexity": "medium",
   "metadata": {
-    "sddVersion": "5.0",
+    "sddVersion": "5.1",
     "estimatedDuration": "6 weeks",
     "teamSize": 3
   },
@@ -562,7 +562,7 @@ Approve this plan?
   "type": "platform",
   "complexity": "complex",
   "metadata": {
-    "sddVersion": "5.0",
+    "sddVersion": "5.1",
     "estimatedDuration": "16 weeks",
     "teamSize": 8,
     "tags": ["ecommerce", "marketplace", "payments", "shipping", "pci-compliance"]

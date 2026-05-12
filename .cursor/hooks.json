@@ -3,13 +3,14 @@
   "hooks": {
     "subagentStop": [
       {
-        "command": "echo \"[SDD] $(date -u +%Y-%m-%dT%H:%M:%SZ) | Subagent: $SUBAGENT_NAME | Task: ${TASK_ID:-unknown} | Status: completed\" >> specs/active/.subagent-log.txt",
-        "matcher": "sdd-.*"
+        "command": "python3 .cursor/hooks/sdd-log-subagent-stop.py",
+        "timeout": 10
       }
     ],
     "stop": [
       {
-        "command": "echo \"[SDD] Session ended at $(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> specs/active/.session-log.txt"
+        "command": "python3 .cursor/hooks/sdd-log-session-stop.py",
+        "timeout": 10
       }
     ]
   }

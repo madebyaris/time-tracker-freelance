@@ -188,7 +188,7 @@ Use this structure:
 
 ---
 
-*Brief created with SDD 5.0 - Ready to code!*
+*Brief created with SDD 5.1 - Ready to code!*
 ```
 
 ### Phase 4: Verification
@@ -236,7 +236,7 @@ Verify file created and contains: problem statement, 3+ requirements, actionable
 ## Related Commands
 
 - `/evolve [task-id]` - Update brief as you discover things
-- `/upgrade [task-id]` - Expand to full SDD 5.0 if needed
+- `/upgrade [task-id]` - Expand to full SDD 5.1 if needed
 - `/implement [task-id]` - Start implementation (requires plan.md)
 - `/refine [task-id]` - Refine the brief through discussion
 - `/research [task-id]` - Deep pattern research (Full SDD planning)

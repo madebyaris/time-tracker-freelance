@@ -123,7 +123,7 @@ Suggest `/upgrade` when change fundamentally alters approach, multiple related c
 ## Related Commands
 
 - `/brief [task-id]` - Create initial brief
-- `/upgrade [task-id]` - Expand to full SDD 5.0
+- `/upgrade [task-id]` - Expand to full SDD 5.1
 - `/refine [task-id]` - Interactive refinement session
 - `/specify [task-id]` - Create detailed specification
 - `/plan [task-id]` - Update technical plan

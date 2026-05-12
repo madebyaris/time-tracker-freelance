@@ -1,7 +1,7 @@
 ---
 name: sdd-reviewer
 description: Code review specialist for security, performance, and spec compliance. Use before marking tasks complete, during pull request reviews, or for quality assurance audits.
-model: fast
+model: inherit
 readonly: true
 ---
 

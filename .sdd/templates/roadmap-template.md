@@ -14,7 +14,7 @@
 {{PROJECT_DESCRIPTION}}
 
 ### Metadata
-- **SDD Version:** 5.0
+- **SDD Version:** 5.1
 - **PLAN Mode:** Enabled
 - **Team Size:** {{TEAM_SIZE}}
 - **Assignee:** {{ASSIGNEE}}

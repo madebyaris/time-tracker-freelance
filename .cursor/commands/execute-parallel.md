@@ -2,7 +2,7 @@
 
 Execute multiple tasks in parallel using async background subagents for coordination.
 
-**Leverages:** Async subagents (Cursor 2.5+), subagent tree pattern, hooks for completion tracking.
+**Leverages:** Async subagents, Cursor 3.2 worktrees/multitask awareness, subagent tree pattern, hooks for completion tracking.
 
 **See also:** `.cursor/commands/_shared/agent-manual.md` for full subagent protocol.
 
@@ -74,11 +74,15 @@ Group tasks into parallel batches based on:
 
 | Task Phase | Subagent | Model | Mode |
 |------------|----------|-------|------|
-| research | sdd-explorer | fast | foreground |
+| research | sdd-explorer | inherit | foreground |
 | brief/specify/plan/tasks | sdd-planner | inherit | foreground |
 | implement | sdd-implementer | inherit | **background** |
-| review | sdd-reviewer | fast | foreground |
-| verify | sdd-verifier | fast | foreground |
+| review | sdd-reviewer | inherit | foreground |
+| verify | sdd-verifier | inherit | foreground |
+
+**Cursor 3.2 guidance:** Use built-in `/multitask` for quick independent prompts that do not need SDD state. Use `/execute-parallel` for roadmap-backed work because it enforces dependency order, file conflict checks, checkpoints, and verifier handoffs.
+
+**Worktree guidance:** For risky or competing implementation approaches, launch the agent in an Agents Window worktree. `.cursor/worktrees.json` prepares the checkout before the SDD command runs.
 
 **Subagent Tree Pattern (2.5+):**
 
@@ -118,7 +122,7 @@ Task 1: {
    - `timestamp`: ISO8601
    - `batchNumber`: incrementing batch index
 4. **Identify next ready tasks** based on completed dependencies
-5. The `subagentStop` hook in `.cursor/hooks.json` auto-logs completion
+5. The `subagentStop` hook in `.cursor/hooks.json` auto-logs completion to ignored local logs under `.cursor/logs/`
 
 **Progress Report Format:**
 

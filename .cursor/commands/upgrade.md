@@ -8,7 +8,7 @@ Escalate from lightweight SDD Quick Planning (Brief) to comprehensive SDD Full P
 
 ## Role
 
-**Planning escalation agent** - Expand lightweight briefs into comprehensive SDD 5.0 documentation when complexity warrants it. Read existing briefs, validate upgrade need, expand content into research.md, spec.md, plan.md, and tasks.md while preserving all existing decisions and context.
+**Planning escalation agent** - Expand lightweight briefs into comprehensive SDD 5.1 documentation when complexity warrants it. Read existing briefs, validate upgrade need, expand content into research.md, spec.md, plan.md, and tasks.md while preserving all existing decisions and context.
 
 ## Usage
 
@@ -40,7 +40,7 @@ I can't find a feature brief for [task-id].
 
 Would you like to:
 1. Create a brief first: `/brief [task-id]`
-2. Start with full SDD 5.0: `/research [task-id]`
+2. Start with full SDD 5.1: `/research [task-id]`
 ```
 
 **Step 2: Read and analyze the brief**
@@ -127,7 +127,7 @@ Would you like to proceed with the upgrade?
 | Next Actions | tasks.md: Task Breakdown |
 | Discoveries (changelog) | research.md: Findings |
 
-**Brief will be:** Preserved as historical reference, linked from new documents, marked as "Upgraded to SDD 5.0"
+**Brief will be:** Preserved as historical reference, linked from new documents, marked as "Upgraded to SDD 5.1"
 
 Ready to begin the upgrade?
 ```
@@ -279,12 +279,12 @@ Add upgrade notice to feature-brief.md:
 ```markdown
 ---
 
-## ⬆️ Upgraded to SDD 5.0
+## ⬆️ Upgraded to SDD 5.1
 
 **Upgrade date:** [date]
 **Reason:** [user's reason]
 
-This brief has been expanded into full SDD 5.0 documentation:
+This brief has been expanded into full SDD 5.1 documentation:
 - `research.md` - Detailed research
 - `spec.md` - Full specification
 - `plan.md` - Technical plan
@@ -318,7 +318,7 @@ Before final output, verify:
 ```
 ✅ Upgrade complete: [task-id]
 
-**Upgraded from:** SDD Quick Brief → SDD 5.0 Full
+**Upgraded from:** SDD Quick Brief → SDD 5.1 Full
 
 **Documents created:**
 - `specs/active/[task-id]/research.md` - Research & context
@@ -359,7 +359,7 @@ Still want to upgrade? Confirm and I'll proceed.
 **Solution**: Gather more info during upgrade:
 - "The brief is sparse. I'll need to ask some questions to create full docs."
 
-### Issue: Some SDD 5.0 docs already exist
+### Issue: Some SDD 5.1 docs already exist
 **Cause**: Partial upgrade previously started
 **Solution**: Identify gaps:
 - "I found existing spec.md. Should I update it or create fresh?"
@@ -374,7 +374,7 @@ Still want to upgrade? Confirm and I'll proceed.
 
 - `/brief [task-id]` - Create lightweight brief
 - `/evolve [task-id]` - Update brief with discoveries
-- `/research [task-id]` - Deep research (part of SDD 5.0)
-- `/specify [task-id]` - Full specification (part of SDD 5.0)
-- `/plan [task-id]` - Technical plan (part of SDD 5.0)
-- `/tasks [task-id]` - Task breakdown (part of SDD 5.0)
+- `/research [task-id]` - Deep research (part of SDD 5.1)
+- `/specify [task-id]` - Full specification (part of SDD 5.1)
+- `/plan [task-id]` - Technical plan (part of SDD 5.1)
+- `/tasks [task-id]` - Task breakdown (part of SDD 5.1)

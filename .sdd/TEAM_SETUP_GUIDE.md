@@ -83,7 +83,7 @@ For each SDD command:
 
 ## SDD Commands to Add
 
-### Primary Commands (SDD 5.0)
+### Primary Commands (SDD 5.1)
 
 1. **`brief`** - Quick feature planning
    - Source: `.cursor/commands/brief.md`
@@ -112,7 +112,7 @@ For each SDD command:
    - Usage: `/execute-task [task-id]`
    - Team-wide: ✅ Recommended
 
-### Advanced Commands (SDD 5.0 Full Planning)
+### Advanced Commands (SDD 5.1 Full Planning)
 
 6. **`research`** - Pattern investigation
    - Source: `.cursor/commands/research.md`
