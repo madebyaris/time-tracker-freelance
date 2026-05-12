@@ -11,6 +11,7 @@ import {
   FieldHint,
   FieldLabel,
   Input,
+  Textarea,
 } from '@ttf/ui';
 import { InvoiceDocument, type InvoiceData, type InvoiceLineData } from '@ttf/invoice-pdf';
 import {
@@ -18,6 +19,7 @@ import {
   entryDurationSeconds,
   formatMoney,
   lineAmount,
+  parseMoney,
   secondsToHundredthsOfHour,
 } from '@ttf/shared';
 import { FileText, FileDown, Plus } from 'lucide-react';
@@ -32,6 +34,47 @@ function monthRange(): { from: number; to: number } {
   const from = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   const to = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
   return { from, to };
+}
+
+const currencies = ['USD', 'EUR', 'GBP', 'IDR', 'JPY', 'CAD', 'AUD'];
+const currencyOptions = currencies.map((currency) => ({ value: currency, label: currency }));
+
+function parseExchangeRate(value: string): number | null {
+  const rate = Number(value.trim());
+  return Number.isFinite(rate) && rate > 0 ? rate : null;
+}
+
+function convertCents(cents: number, exchangeRate: number): number {
+  return Math.round(cents * exchangeRate);
+}
+
+function parseExtraCharges(input: string): InvoiceLineData[] {
+  const rows = input
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return rows.map((line, index) => {
+    const separatorIndex = line.lastIndexOf('|');
+    if (separatorIndex < 0) {
+      throw new Error(`Extra charge line ${index + 1}: use "Description | Amount"`);
+    }
+
+    const description = line.slice(0, separatorIndex).trim();
+    const amount = parseMoney(line.slice(separatorIndex + 1));
+    if (!description) throw new Error(`Extra charge line ${index + 1}: add a description`);
+    if (amount == null || amount <= 0) {
+      throw new Error(`Extra charge line ${index + 1}: add a positive amount`);
+    }
+
+    return {
+      kind: 'fixed',
+      description,
+      hours: 0,
+      rate: 0,
+      amount,
+    };
+  });
 }
 
 export function InvoicesView() {
@@ -57,19 +100,28 @@ export function InvoicesView() {
   const [fromStr, setFromStr] = useState(new Date(from).toISOString().slice(0, 10));
   const [toStr, setToStr] = useState(new Date(to).toISOString().slice(0, 10));
   const [taxPercent, setTaxPercent] = useState('0');
+  const [invoiceCurrency, setInvoiceCurrency] = useState('USD');
+  const [exchangeRate, setExchangeRate] = useState('1');
+  const [extraChargesText, setExtraChargesText] = useState('');
 
   const generate = useMutation({
     mutationFn: async () => {
       if (!clientId) throw new Error('Select a client');
       const c = (clientsQ.data ?? []).find((x) => x.id === clientId);
       if (!c) throw new Error('Client not found');
+      const targetCurrency = (invoiceCurrency || c.currency).toUpperCase();
+      const needsConversion = targetCurrency !== c.currency;
+      const manualExchangeRate = needsConversion ? parseExchangeRate(exchangeRate) : 1;
+      if (!manualExchangeRate) {
+        throw new Error(`Enter an exchange rate from ${c.currency} to ${targetCurrency}`);
+      }
       const fromT = new Date(fromStr + 'T00:00:00').getTime();
       const toT = new Date(toStr + 'T23:59:59.999').getTime() + 1;
       const entries = await TimeEntries.listForClientRange(clientId, fromT, toT);
       const projById = new Map((projectsQ.data ?? []).map((p) => [p.id, p]));
       const lineRows: Array<InvoiceLineData & { project_id: string | null }> = [];
       for (const e of entries) {
-        const project = e.project_id ? projById.get(e.project_id) ?? null : null;
+        const project = e.project_id ? (projById.get(e.project_id) ?? null) : null;
         // Use entry → project → client billing precedence so overrides and
         // client-only entries show up on the invoice (not just project ones).
         const billing = getEntryBilling(e, project, c);
@@ -78,15 +130,22 @@ export function InvoicesView() {
         const h = secondsToHundredthsOfHour(secs);
         const amount = lineAmount(h, billing.rate);
         lineRows.push({
+          kind: 'time',
           project_id: e.project_id,
           description: e.description || project?.name || c.name,
           hours: h,
-          rate: billing.rate,
-          amount,
+          rate: convertCents(billing.rate, manualExchangeRate),
+          amount: convertCents(amount, manualExchangeRate),
+          work_started_at: e.started_at,
+          work_ended_at: e.ended_at,
         });
       }
+      const extraChargeRows = parseExtraCharges(extraChargesText);
+      for (const line of extraChargeRows) {
+        lineRows.push({ ...line, project_id: null });
+      }
       if (lineRows.length === 0) {
-        throw new Error('No billable entries in this range');
+        throw new Error('No billable entries or extra charges in this range');
       }
       const subtotal = lineRows.reduce((s, l) => s + l.amount, 0);
       const bps = Math.max(0, Math.round((parseFloat(taxPercent) || 0) * 100));
@@ -118,12 +177,22 @@ export function InvoicesView() {
         number,
         issued_at: issuedAt,
         due_at: dueAt,
-        currency: c.currency,
+        currency: targetCurrency,
         subtotal,
         tax_rate: bps,
         tax_amount: taxAmt,
         total,
-        notes: `Period ${fromStr} – ${toStr}`,
+        notes: [
+          `Period ${fromStr} - ${toStr}`,
+          needsConversion
+            ? `Converted from ${c.currency} at 1 ${c.currency} = ${manualExchangeRate} ${targetCurrency}.`
+            : null,
+          extraChargeRows.length > 0
+            ? `${extraChargeRows.length} additional charge(s) included.`
+            : null,
+        ]
+          .filter(Boolean)
+          .join('\n'),
         from: {
           name: (fromName && fromName.trim()) || 'You',
           email: fromEmail || null,
@@ -160,9 +229,7 @@ export function InvoicesView() {
         await writeFile(out, new Uint8Array(ab));
       } catch (err) {
         throw new Error(
-          `Could not save PDF to ${out}: ${
-            err instanceof Error ? err.message : 'unknown error'
-          }`,
+          `Could not save PDF to ${out}: ${err instanceof Error ? err.message : 'unknown error'}`,
         );
       }
 
@@ -171,7 +238,7 @@ export function InvoicesView() {
         number,
         issued_at: issuedAt,
         due_at: dueAt,
-        currency: c.currency,
+        currency: targetCurrency,
         subtotal,
         tax_rate: bps,
         total,
@@ -195,6 +262,19 @@ export function InvoicesView() {
 
   const clients = clientsQ.data ?? [];
   const invoices = invoicesQ.data ?? [];
+  const selectedClient = clients.find((client) => client.id === clientId) ?? null;
+  const baseCurrency = selectedClient?.currency ?? 'USD';
+  const effectiveInvoiceCurrency = invoiceCurrency || baseCurrency;
+  const needsConversion = Boolean(selectedClient && effectiveInvoiceCurrency !== baseCurrency);
+
+  function selectClient(nextClientId: string | null) {
+    setClientId(nextClientId);
+    const nextClient = clients.find((client) => client.id === nextClientId);
+    if (nextClient) {
+      setInvoiceCurrency(nextClient.currency);
+      setExchangeRate('1');
+    }
+  }
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-5">
@@ -202,9 +282,7 @@ export function InvoicesView() {
         <div className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
           Invoices
         </div>
-        <h1 className="mt-1 text-xl font-semibold tracking-tight">
-          Bill tracked time
-        </h1>
+        <h1 className="mt-1 text-xl font-semibold tracking-tight">Bill tracked time</h1>
       </header>
 
       <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
@@ -213,7 +291,7 @@ export function InvoicesView() {
             <FieldLabel>Client</FieldLabel>
             <Combobox
               value={clientId}
-              onChange={setClientId}
+              onChange={selectClient}
               options={clients.map((c) => ({ value: c.id, label: c.name, hint: c.currency }))}
               placeholder="Select client"
               searchPlaceholder="Find client…"
@@ -238,10 +316,51 @@ export function InvoicesView() {
               onChange={(e) => setTaxPercent(e.target.value)}
             />
           </Field>
+          <Field>
+            <FieldLabel>Invoice currency</FieldLabel>
+            <Combobox
+              value={effectiveInvoiceCurrency}
+              onChange={(value) => {
+                const nextCurrency = value ?? baseCurrency;
+                setInvoiceCurrency(nextCurrency);
+                if (nextCurrency === baseCurrency) setExchangeRate('1');
+              }}
+              options={currencyOptions}
+              placeholder="Currency"
+              searchPlaceholder="Find currency…"
+              emptyLabel="No currency"
+              allowClear={false}
+            />
+          </Field>
+          <Field>
+            <FieldLabel>Exchange rate</FieldLabel>
+            <Input
+              type="number"
+              min="0"
+              step="0.0001"
+              value={needsConversion ? exchangeRate : '1'}
+              onChange={(e) => setExchangeRate(e.target.value)}
+              disabled={!needsConversion}
+            />
+          </Field>
+          <Field className="sm:col-span-4">
+            <FieldLabel>Extra charges</FieldLabel>
+            <Textarea
+              rows={3}
+              value={extraChargesText}
+              onChange={(e) => setExtraChargesText(e.target.value)}
+              placeholder={'Software app | 49.00\nStock assets | 12.50'}
+            />
+          </Field>
         </div>
         <FieldHint className="mt-3">
           Pulls billable entries linked to the client (project entries and client-only entries),
-          honors per-entry rate overrides, groups them by line, and saves a PDF.
+          honors per-entry rate overrides, shows each work date/time on the PDF, and saves the
+          invoice in {effectiveInvoiceCurrency}
+          {needsConversion
+            ? ` at 1 ${baseCurrency} = ${exchangeRate} ${effectiveInvoiceCurrency}`
+            : ''}
+          . Extra charges use the invoice currency and the format "Description | Amount".
         </FieldHint>
         <div className="mt-4 flex items-center justify-end gap-2">
           {generate.error && (

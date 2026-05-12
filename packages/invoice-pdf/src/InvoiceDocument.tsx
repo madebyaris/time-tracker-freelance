@@ -6,6 +6,9 @@ export interface InvoiceLineData {
   hours: number; // hundredths of an hour
   rate: number; // cents per hour
   amount: number; // cents
+  kind?: 'time' | 'fixed';
+  work_started_at?: number | null;
+  work_ended_at?: number | null;
 }
 
 export interface InvoiceParty {
@@ -46,6 +49,7 @@ const ACCENT = '#0ea5e9';
 const styles = StyleSheet.create({
   page: {
     padding: 40,
+    paddingBottom: 72,
     fontSize: 10,
     fontFamily: 'Helvetica',
     color: NAVY,
@@ -60,13 +64,20 @@ const styles = StyleSheet.create({
     borderBottom: `1pt solid ${NAVY}`,
     paddingBottom: 20,
   },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
+  brand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 18,
+  },
   logo: { width: 56, height: 56, borderRadius: 6, objectFit: 'contain' },
-  brandText: { flexDirection: 'column' },
+  brandText: { flexDirection: 'column', flexShrink: 1 },
   brandName: { fontSize: 16, fontWeight: 700, color: NAVY },
   brandContact: { fontSize: 9, color: MUTED, marginTop: 2 },
 
-  titleBlock: { alignItems: 'flex-end' },
+  titleBlock: { alignItems: 'flex-end', width: 178, flexShrink: 0 },
   eyebrow: {
     fontSize: 8,
     textTransform: 'uppercase',
@@ -74,7 +85,7 @@ const styles = StyleSheet.create({
     color: MUTED,
     marginBottom: 4,
   },
-  title: { fontSize: 28, fontWeight: 700, color: NAVY, marginBottom: 6 },
+  title: { fontSize: 17, fontWeight: 700, color: NAVY, marginBottom: 6, textAlign: 'right' },
   metaRow: { flexDirection: 'row', gap: 8, fontSize: 9, color: SLATE },
   metaLabel: { color: MUTED },
 
@@ -119,6 +130,8 @@ const styles = StyleSheet.create({
   colHours: { flex: 1, textAlign: 'right' },
   colRate: { flex: 1.2, textAlign: 'right' },
   colAmount: { flex: 1.3, textAlign: 'right' },
+  lineDescription: { color: NAVY },
+  lineMeta: { marginTop: 2, fontSize: 8, color: MUTED },
 
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
   notesCol: { flex: 1.4, paddingRight: 16 },
@@ -213,6 +226,44 @@ function fmtDate(ts: number): string {
   });
 }
 
+function fmtDateTime(ts: number): string {
+  return new Date(ts).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+function fmtTime(ts: number): string {
+  return new Date(ts).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+function sameDate(a: number, b: number): boolean {
+  const da = new Date(a);
+  const db = new Date(b);
+  return (
+    da.getFullYear() === db.getFullYear() &&
+    da.getMonth() === db.getMonth() &&
+    da.getDate() === db.getDate()
+  );
+}
+
+function fmtWorkPeriod(line: InvoiceLineData): string | null {
+  if (!line.work_started_at) return null;
+  if (!line.work_ended_at) return `${fmtDateTime(line.work_started_at)} - running`;
+  if (sameDate(line.work_started_at, line.work_ended_at)) {
+    return `${fmtDate(line.work_started_at)}, ${fmtTime(line.work_started_at)} - ${fmtTime(
+      line.work_ended_at,
+    )}`;
+  }
+  return `${fmtDateTime(line.work_started_at)} - ${fmtDateTime(line.work_ended_at)}`;
+}
+
 function splitLines(value?: string | null): string[] {
   if (!value) return [];
   return value
@@ -221,13 +272,7 @@ function splitLines(value?: string | null): string[] {
     .filter(Boolean);
 }
 
-function PartyBlock({
-  label,
-  party,
-}: {
-  label: string;
-  party: InvoiceParty;
-}) {
+function PartyBlock({ label, party }: { label: string; party: InvoiceParty }) {
   const addressLines = splitLines(party.address);
   return (
     <View style={styles.party}>
@@ -290,14 +335,25 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
             <Text style={styles.colRate}>Rate</Text>
             <Text style={styles.colAmount}>Amount</Text>
           </View>
-          {data.lines.map((line, i) => (
-            <View key={i} style={[styles.row, i % 2 === 1 ? styles.rowAlt : {}]}>
-              <Text style={styles.colDesc}>{line.description}</Text>
-              <Text style={styles.colHours}>{(line.hours / 100).toFixed(2)}</Text>
-              <Text style={styles.colRate}>{formatMoney(line.rate, data.currency)}</Text>
-              <Text style={styles.colAmount}>{formatMoney(line.amount, data.currency)}</Text>
-            </View>
-          ))}
+          {data.lines.map((line, i) => {
+            const isFixed = line.kind === 'fixed' || line.hours <= 0;
+            const workPeriod = fmtWorkPeriod(line);
+            return (
+              <View key={i} style={[styles.row, i % 2 === 1 ? styles.rowAlt : {}]} wrap={false}>
+                <View style={styles.colDesc}>
+                  <Text style={styles.lineDescription}>{line.description}</Text>
+                  {workPeriod && <Text style={styles.lineMeta}>{workPeriod}</Text>}
+                </View>
+                <Text style={styles.colHours}>
+                  {isFixed ? 'Fixed' : (line.hours / 100).toFixed(2)}
+                </Text>
+                <Text style={styles.colRate}>
+                  {isFixed ? '-' : formatMoney(line.rate, data.currency)}
+                </Text>
+                <Text style={styles.colAmount}>{formatMoney(line.amount, data.currency)}</Text>
+              </View>
+            );
+          })}
         </View>
 
         <View style={styles.summaryRow}>
@@ -316,9 +372,7 @@ export function InvoiceDocument({ data }: { data: InvoiceData }) {
             </View>
             {data.tax_rate > 0 && (
               <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>
-                  Tax ({(data.tax_rate / 100).toFixed(2)}%)
-                </Text>
+                <Text style={styles.totalLabel}>Tax ({(data.tax_rate / 100).toFixed(2)}%)</Text>
                 <Text>{formatMoney(data.tax_amount, data.currency)}</Text>
               </View>
             )}
