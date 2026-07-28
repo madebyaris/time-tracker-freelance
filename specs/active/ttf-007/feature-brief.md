@@ -38,7 +38,7 @@ an ad-hoc signed `/Applications/Tickr.app`:
 After `ditto`-ing the bundle to `/Applications` and running `lsregister -f`:
 
 ```
-app.tickr.desktop.TickrWidget(0.5.0)
+app.tickr.desktop.TickrWidget(0.4.0)
    Path = /Applications/Tickr.app/Contents/PlugIns/TickrWidget.appex
    Parent Bundle = /Applications/Tickr.app
    Platform = macOS
