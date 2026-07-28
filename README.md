@@ -3,9 +3,9 @@
 </p>
 
 <p align="center">
-  <a href="specs/active/ttf-002/feature-brief.md"><img src="https://img.shields.io/badge/status-ttf--002%20shipped-18c37e?style=flat-square" alt="ttf-002 shipped" /></a>
-  <a href="specs/active/ttf-004/feature-brief.md"><img src="https://img.shields.io/badge/deploy-Cloudflare%20shipped-18c37e?style=flat-square" alt="Cloudflare deploy shipped" /></a>
-  <img src="https://img.shields.io/badge/platform-macOS%20first-111827?style=flat-square" alt="macOS first" />
+  <a href="specs/active/ttf-008/feature-brief.md"><img src="https://img.shields.io/badge/macOS%20widget-shipped-18c37e?style=flat-square" alt="macOS widget shipped" /></a>
+  <a href="specs/active/ttf-005/feature-brief.md"><img src="https://img.shields.io/badge/reports-fundamentals-18c37e?style=flat-square" alt="reports fundamentals" /></a>
+  <img src="https://img.shields.io/badge/platform-macOS%20·%20Windows%20·%20Linux-111827?style=flat-square" alt="Cross platform" />
   <img src="https://img.shields.io/badge/offline-local%20first-0f766e?style=flat-square" alt="Local first" />
   <img src="https://img.shields.io/badge/stack-Tauri%202%20%2B%20React%20%2B%20Rust-1d4ed8?style=flat-square" alt="Tauri React Rust" />
 </p>
@@ -13,36 +13,79 @@
 <h1 align="center">Tickr</h1>
 
 <p align="center">
-  A local-first time tracker for indie freelancers on macOS.
+  A local-first time tracker for indie freelancers — desktop first, with an optional private web dashboard.
 </p>
 
-Tickr helps freelancers track time, manage clients/projects, prepare invoices, and optionally sync data to a private web dashboard.
+Tickr helps freelancers track time, manage clients and projects, prepare invoices, and optionally sync data to a private web dashboard.
 
 You can use it in two ways:
 
-- **Offline desktop app**: best if you only need Tickr on one Mac.
+- **Offline desktop app**: best if you only need Tickr on one machine.
 - **Private hosted dashboard**: best if you want browser access and desktop sync.
 
 The easiest hosted setup is **Cloudflare Workers + D1**. VPS support is available as a manual Node/Postgres path, but it is not yet packaged as a one-command production installer.
 
+## Screenshots
+
+Real app screenshots. Client names are redacted.
+
+<p align="center">
+  <img src="docs/readme/screenshot-today.jpg" alt="Tickr Today view" width="100%" />
+  <br />
+  <em>Today — live timer, tracked and billable totals</em>
+</p>
+
+<p align="center">
+  <img src="docs/readme/screenshot-reports.jpg" alt="Tickr Reports view" width="100%" />
+  <br />
+  <em>Reports — ranges, billable split, effective rate, CSV export</em>
+</p>
+
+<p align="center">
+  <img src="docs/readme/screenshot-timelog.jpg" alt="Tickr Time Log view" width="100%" />
+  <br />
+  <em>Time Log — filter, edit rates, export what you see</em>
+</p>
+
+<p align="center">
+  <img src="docs/readme/screenshot-projects.jpg" alt="Tickr Projects view" width="48%" />
+  &nbsp;
+  <img src="docs/readme/screenshot-clients.jpg" alt="Tickr Clients view" width="48%" />
+  <br />
+  <em>Projects and clients</em>
+</p>
+
+<p align="center">
+  <img src="docs/readme/screenshot-panel.png" alt="Tickr Quick Panel" width="70%" />
+  <br />
+  <em>Quick Panel — start a timer without opening the full window</em>
+</p>
+
+<p align="center">
+  <img src="docs/readme/screenshot-widget.png" alt="Tickr macOS desktop widget" width="42%" />
+  <br />
+  <em>macOS desktop widget — today's totals at a glance</em>
+</p>
+
 ## What Tickr Does
 
-- Track time with a native macOS app.
-- Start timers from a quick panel with global shortcuts.
+- Track time with a native desktop app (macOS, Windows, Linux).
+- Start timers from a Quick Panel with global shortcuts.
 - Pause and resume without losing accurate billable time.
+- Optional idle detection — discard idle time, or turn it off when you need to.
 - Manage clients, projects, tasks, reports, and invoices.
-- Add client logos, addresses, tax IDs, websites, phone numbers, and rates.
-- Export CSV data.
+- Reports with week/month/quarter/year and custom ranges, client rollups, billable splits, and filter-aware CSV export.
 - Generate branded PDF invoices with your logo, address, tax ID, signature, and payment instructions.
+- macOS desktop widget for the running timer and today's totals (Open / Pause / Resume / New).
 - Sync to a private API and view the same data in a web dashboard.
 
 ## Pick Your Setup
 
-### Option 1: Offline Mac App
+### Option 1: Offline Desktop App
 
-Choose this if you only want to track time on your Mac.
+Choose this if you only want to track time on your computer.
 
-You do **not** need an account, server, Cloudflare, VPS, or database. Your data stays local on your computer.
+You do **not** need an account, server, Cloudflare, VPS, or database. Your data stays local.
 
 ### Option 2: Cloudflare Web Dashboard
 
@@ -70,6 +113,7 @@ Current VPS support is a manual Node.js API + Postgres setup. It works as a self
 - Rust stable, only if you want to run or build the desktop app from source.
 - Docker, only if you want local Postgres or VPS-style self-hosting.
 - A Cloudflare account, only if you want the recommended hosted dashboard.
+- Xcode + [xcodegen](https://github.com/yonaskolb/XcodeGen), only if you want the macOS widget in a local release build.
 
 Install project dependencies:
 
@@ -91,6 +135,12 @@ Build the desktop app:
 pnpm desktop:build
 ```
 
+On macOS, a packaged build that includes the widget:
+
+```bash
+pnpm --filter @ttf/desktop tauri:build:macos
+```
+
 ### Pre-Built Installers
 
 Tagged releases publish installers for macOS (Apple Silicon + Intel),
@@ -99,17 +149,17 @@ Windows, and Linux on the [GitHub Releases page](../../releases).
 These builds are not signed by an Apple Developer ID or an EV Windows
 certificate, so Gatekeeper / SmartScreen will warn you on first launch. See
 [docs/install-unsigned.md](docs/install-unsigned.md) for the one-time bypass
-steps for each platform.
+steps for each platform, including how to add the macOS widget.
 
-Useful shortcuts:
+Useful shortcuts (macOS defaults; Windows/Linux use Ctrl/Alt variants):
 
 | Shortcut | Action |
 |---|---|
-| `Cmd+Shift+Space` | Open or close the quick panel |
+| `Cmd+Shift+Space` | Open or close the Quick Panel |
 | `Option+Cmd+T` | Start or stop the timer |
-| `Enter` in quick panel | Start tracking |
-| `Esc` in quick panel | Close the panel |
-| `Cmd+O` in quick panel | Open the full app |
+| `Enter` in Quick Panel | Start tracking |
+| `Esc` in Quick Panel | Close the panel |
+| `Cmd+O` in Quick Panel | Open the full app |
 | `Cmd+Q` | Quit |
 
 ## Deploy the Web Dashboard on Cloudflare
@@ -272,8 +322,9 @@ This README intentionally treats Cloudflare as the easier hosted path until the 
 
 | Script | Description |
 |---|---|
-| `pnpm desktop` | Run the macOS desktop app |
+| `pnpm desktop` | Run the desktop app |
 | `pnpm desktop:build` | Build the desktop app |
+| `pnpm --filter @ttf/desktop tauri:build:macos` | macOS release with widget embedded |
 | `pnpm web` | Run the web dashboard locally |
 | `pnpm web:build` | Build the web dashboard |
 | `pnpm api` | Run the Node/Postgres API locally |
@@ -290,7 +341,7 @@ This README intentionally treats Cloudflare as the easier hosted path until the 
 
 ```text
 apps/
-  desktop/      macOS desktop app
+  desktop/      desktop app (Tauri + React)
   web/          browser dashboard
   api/          hosted API for sync and auth
 packages/
@@ -303,6 +354,8 @@ infra/
   wrangler/     Cloudflare Worker deploy config
 docs/
   deploy-cloudflare.md
+  install-unsigned.md
+  readme/       screenshots and hero art
 ```
 
 ## Feature Specs
@@ -310,9 +363,13 @@ docs/
 This repo uses Spec-Driven Development. Completed work is documented in `specs/active`.
 
 - [`ttf-001`](specs/active/ttf-001/feature-brief.md): first desktop/API/web sync foundation.
-- [`ttf-002`](specs/active/ttf-002/feature-brief.md): richer clients, quick panel, menubar timer, real pause.
+- [`ttf-002`](specs/active/ttf-002/feature-brief.md): richer clients, Quick Panel, menubar timer, real pause.
 - [`ttf-003`](specs/active/ttf-003/feature-brief.md): invoice PDF export and branded invoice profile.
 - [`ttf-004`](specs/active/ttf-004/feature-brief.md): Cloudflare deployability and web auth hardening.
+- [`ttf-005`](specs/active/ttf-005/feature-brief.md): reports fundamentals (ranges, client rollup, billable split, CSV).
+- [`ttf-006`](specs/active/ttf-006/feature-brief.md): Windows and macOS platform polish.
+- [`ttf-007`](specs/active/ttf-007/feature-brief.md): widget feasibility without Apple Developer enrollment.
+- [`ttf-008`](specs/active/ttf-008/feature-brief.md): macOS WidgetKit widget and deep-link actions.
 
 ## License
 

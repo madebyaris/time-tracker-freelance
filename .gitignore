@@ -55,3 +55,6 @@ Thumbs.db
 
 # Coverage
 coverage/
+
+# Unredacted screenshot working files
+docs/readme/raw/
