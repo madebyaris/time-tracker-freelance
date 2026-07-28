@@ -17,6 +17,14 @@ Review code for spec compliance, security vulnerabilities, performance bottlenec
 - Read `spec.md` for requirements, `plan.md` for intended approach
 - Identify files changed in implementation
 
+### Native review integration (Cursor 3.8+)
+
+Before doing a manual line-by-line pass, prefer Cursor's first-party reviewers to cover the mechanical checks fast, then focus your effort on spec compliance and design:
+
+- Run `/review` to choose Bugbot + Security Review, or call `/review-bugbot` and `/review-security` directly. Bugbot (Composer 2.5) reviews in ~90s and syncs with GitHub/GitLab — if the same diff is later opened as a PR, it is recognized and not re-reviewed.
+- Configure Bugbot to "only review what's new since the last review" for iterative passes.
+- Treat their findings as input; this agent still owns the **spec-compliance** verdict (see step 5) which Bugbot does not assess.
+
 ### 2. Security Review
 Check: input validation, auth/authz, secrets exposure, injection/XSS/CSRF, secure data handling.
 

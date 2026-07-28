@@ -2,9 +2,9 @@
 alwaysApply: true
 ---
 
-# SDD (Spec-Driven Development) System v5.1
+# SDD (Spec-Driven Development) System v6.0
 
-**Requires Cursor 3.2+** for async subagents, plugins, hooks, skills, agent multitasking, worktrees, and multi-root sessions.
+**Requires Cursor 3.8+** for async subagents, nested subagent trees, skills, plugins, cloud subagents (`/in-cloud`, `/babysit`), native review (`/review`), Memories, agent multitasking, worktrees, and multi-root sessions.
 
 ## Core Philosophy
 
@@ -34,9 +34,9 @@ User Request → Main Agent → Subagents (parallel/async) → Skills (auto-invo
 - **Foreground** blocks the parent until complete. Use when results are needed immediately (exploration, planning, verification).
 - **Background** (`is_background: true`) returns immediately. The parent continues working. Use for long-running implementations and orchestration.
 
-### Subagent Tree (2.5+)
+### Subagent Tree
 
-Subagents can spawn their own subagents:
+Subagents can spawn their own subagents to any depth:
 
 ```
 sdd-orchestrator (background)
@@ -59,6 +59,7 @@ sdd-orchestrator (background)
 | `sdd-implementation` | Plan ready for execution | Todo-based coding |
 | `sdd-audit` | Code review requested | Spec compliance check |
 | `sdd-evolve` | Discoveries during dev | Spec updates |
+| `sdd-memory` | Start/finish of planning or implementation | Recall + persist durable knowledge |
 
 Skills use progressive loading — keep `SKILL.md` focused, put details in `references/`, scripts in `scripts/`, templates in `assets/`.
 
@@ -77,11 +78,30 @@ Skills use progressive loading — keep `SKILL.md` focused, put details in `refe
 - `/execute-task` → Sequential task execution
 - `/execute-parallel` → Parallel via async subagents
 
-### Cursor 3.2 Agent Runtime
+### Cursor 3.8 Agent Runtime
 - Use `/multitask` for ad hoc independent work that does not need a roadmap, checkpoint, or dependency graph.
 - Use `/execute-parallel` for SDD roadmap execution because it handles dependencies, file-conflict batching, checkpoints, and verifier handoffs.
 - Use Agents Window worktrees for risky, parallel, or best-of-N implementation work. `.cursor/worktrees.json` prepares the isolated checkout.
+- Offload long-running, risky, or environment-heavy tasks to **cloud subagents** with `/in-cloud` (own VM + branch); use `/babysit` to drive a PR to merge-ready remotely. `.cursor/environment.json` makes cloud agents start faster.
 - In multi-root workspaces, resolve paths from the active project root and avoid assuming a single repository owns every file.
+
+## Memory (`.sdd/config.json` → `memory`)
+
+SDD long-term memory is **optional and pluggable**. The active backend is set in `.sdd/config.json`:
+
+| Provider | Setup | Notes |
+|----------|-------|-------|
+| `standard` *(default)* | none | Rules-only. No persistent store; relies on `.cursor/rules/` + `specs/`. |
+| `cursor-native` | toggle on | Cursor 3.8 Memories — all plans (Free/Pro/Team), individual level. Needs Privacy Mode off + Settings → Rules → "Generate Memories". |
+| `mem0` | mem0 MCP / local API | Free self-host semantic memory across sessions. |
+
+The `sdd-memory` skill performs **recall before planning/implementation** and **persist after discoveries**. Configure with `/sdd-memory`. Never store secrets in memory. When `standard`, memory is a no-op.
+
+## Native Review (Cursor 3.8+)
+
+Prefer Cursor's first-party reviewers for mechanical checks, then let SDD agents own spec compliance:
+- `/review` (choose Bugbot + Security Review), or `/review-bugbot` / `/review-security` directly. Bugbot runs in ~90s and syncs with GitHub/GitLab to avoid duplicate PR reviews.
+- `/audit` and `sdd-reviewer` fold native findings into a single consolidated report.
 
 ## DAG-Based Execution
 
@@ -108,17 +128,6 @@ sdd-implementer → [code] → sdd-verifier → [validation report]
 
 Background implementers spawn foreground verifiers as child subagents.
 
-## Hooks (`.cursor/hooks.json`)
-
-SDD uses hooks for workflow automation:
-
-| Hook | Trigger | Purpose |
-|------|---------|---------|
-| `subagentStop` | Subagent completes | Track completion in roadmap |
-| `stop` | Agent session ends | Generate completion summary |
-
-See [Cursor hooks docs](https://cursor.com/docs/agent/hooks) for configuration.
-
 ## Sandbox (`.cursor/sandbox.json`)
 
 Network access controls for sandboxed commands. Configure allowed domains for package registries and APIs. See `.cursor/sandbox.json` for project defaults.
@@ -135,9 +144,8 @@ specs/
 ├── agents/                    # Subagents (foreground + background)
 ├── skills/                    # Agent Skills (progressive loading)
 ├── commands/                  # Slash commands
-├── hooks.json                 # Workflow automation hooks
-├── hooks/                     # JSON-stdin hook scripts
-├── worktrees.json             # Cursor 3.2 worktree setup
+├── environment.json           # Cloud agent environment setup (3.7+)
+├── worktrees.json             # Worktree setup
 └── sandbox.json               # Network access controls
 ```
 
@@ -157,7 +165,9 @@ specs/
 | `/sdd-full-plan` | Full project roadmap | sdd-orchestrator |
 | `/execute-task` | Execute roadmap task | sdd-implementer |
 | `/execute-parallel` | Parallel DAG execution | sdd-orchestrator |
-| `/multitask` | Ad hoc Cursor 3.2 parallel work | Built-in async subagents |
+| `/sdd-memory` | Configure memory backend | sdd-memory skill |
+| `/multitask` | Ad hoc parallel work | Built-in async subagents |
+| `/review` | Native Bugbot + Security review | Built-in (3.7+) |
 
 ## Todo Execution Rules
 
@@ -176,5 +186,6 @@ This system can be packaged as a Cursor Marketplace plugin. See `.cursor-plugin/
 - **Agent Manual**: `.cursor/commands/_shared/agent-manual.md`
 - **Subagents**: `.cursor/agents/`
 - **Skills**: `.cursor/skills/`
-- **Hooks**: `.cursor/hooks.json`
+- **Memory**: `.cursor/skills/sdd-memory/` + `.sdd/config.json` `memory`
+- **Cloud env**: `.cursor/environment.json`
 - **Sandbox**: `.cursor/sandbox.json`

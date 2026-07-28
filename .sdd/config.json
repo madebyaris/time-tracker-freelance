@@ -1,25 +1,57 @@
 {
-  "version": "5.1.0",
+  "version": "6.0.0",
+  "cursorMinVersion": "3.8",
   "project": {
-    "name": "SDD Cursor Commands",
-    "description": "Spec-Driven Development toolkit for Cursor IDE",
+    "name": "Tickr",
+    "description": "Local-first freelancer time tracker \u2014 Tauri desktop + optional sync API/web dashboard",
     "created": "2024-09-19"
   },
   "settings": {
-    "defaultFeaturePrefix": "feat-",
+    "defaultFeaturePrefix": "ttf-",
     "autoNumberFeatures": true,
     "requireReviews": true,
     "collaborationMode": true,
-    "defaultWorkflow": "brief", 
+    "defaultWorkflow": "brief",
     "planningTimeLimit": 30,
     "maxParallelImplementers": 4,
     "templates": {
       "brief": ".sdd/templates/feature-brief-v2.md",
       "spec": ".sdd/templates/spec-compact.md",
-      "plan": ".sdd/templates/plan-compact.md", 
+      "plan": ".sdd/templates/plan-compact.md",
       "tasks": ".sdd/templates/tasks-compact.md",
       "research": ".sdd/templates/research-compact.md",
       "todo": ".sdd/templates/todo-compact.md"
+    }
+  },
+  "memory": {
+    "provider": "standard",
+    "enabled": false,
+    "scope": [
+      "decisions",
+      "conventions",
+      "gotchas",
+      "architecture"
+    ],
+    "providers": {
+      "standard": {
+        "description": "Rules-only. No persistent agent memory beyond .cursor/rules and specs/. Zero dependencies (default).",
+        "store": null
+      },
+      "cursor-native": {
+        "description": "Cursor 3.8 built-in Memories. Free, zero-setup, managed in the Cursor UI.",
+        "store": "cursor-memories"
+      },
+      "mem0": {
+        "description": "mem0 open-source semantic memory. Free self-host via the mem0 MCP server or local API.",
+        "store": "mem0",
+        "mcpServer": "mem0",
+        "config": {
+          "apiBaseEnv": "MEM0_API_BASE",
+          "apiKeyEnv": "MEM0_API_KEY",
+          "userId": "sdd",
+          "local": true
+        }
+      }
     }
   },
   "directories": {
@@ -29,8 +61,23 @@
     "backlog": "specs/backlog"
   },
   "workflow": {
-    "phases": ["specify", "plan", "tasks", "implement", "review", "complete"],
-    "requiredFiles": ["spec.md", "plan.md", "tasks.md"],
-    "optionalFiles": ["progress.md", "reviews.md", "notes.md"]
+    "phases": [
+      "specify",
+      "plan",
+      "tasks",
+      "implement",
+      "review",
+      "complete"
+    ],
+    "requiredFiles": [
+      "spec.md",
+      "plan.md",
+      "tasks.md"
+    ],
+    "optionalFiles": [
+      "progress.md",
+      "reviews.md",
+      "notes.md"
+    ]
   }
 }

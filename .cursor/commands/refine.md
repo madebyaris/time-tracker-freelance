@@ -321,6 +321,6 @@ This also removes related tasks. Confirm?"
 
 - `/brief [task-id]` - Create new brief
 - `/evolve [task-id]` - Quick updates during development
-- `/upgrade [task-id]` - Expand to full SDD 5.1
+- `/upgrade [task-id]` - Expand to full SDD 6.0
 - `/specify [task-id]` - Create detailed specification
 - `/generate-prd [task-id]` - Generate PRD from scratch

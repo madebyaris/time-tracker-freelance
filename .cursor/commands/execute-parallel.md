@@ -2,7 +2,7 @@
 
 Execute multiple tasks in parallel using async background subagents for coordination.
 
-**Leverages:** Async subagents, Cursor 3.2 worktrees/multitask awareness, subagent tree pattern, hooks for completion tracking.
+**Leverages:** Async subagents, Cursor 3.8 worktrees/multitask awareness, subagent tree pattern, and optional cloud subagents (`/in-cloud`, `/babysit`) for isolated long-running work.
 
 **See also:** `.cursor/commands/_shared/agent-manual.md` for full subagent protocol.
 
@@ -80,11 +80,13 @@ Group tasks into parallel batches based on:
 | review | sdd-reviewer | inherit | foreground |
 | verify | sdd-verifier | inherit | foreground |
 
-**Cursor 3.2 guidance:** Use built-in `/multitask` for quick independent prompts that do not need SDD state. Use `/execute-parallel` for roadmap-backed work because it enforces dependency order, file conflict checks, checkpoints, and verifier handoffs.
+**Cursor 3.8 guidance:** Use built-in `/multitask` for quick independent prompts that do not need SDD state. Use `/execute-parallel` for roadmap-backed work because it enforces dependency order, file conflict checks, checkpoints, and verifier handoffs.
 
 **Worktree guidance:** For risky or competing implementation approaches, launch the agent in an Agents Window worktree. `.cursor/worktrees.json` prepares the checkout before the SDD command runs.
 
-**Subagent Tree Pattern (2.5+):**
+**Cloud guidance (3.7+):** For long-running, risky, or environment-heavy tasks, offload to a cloud subagent with `/in-cloud` (its own VM + branch keeps the local workspace clean). After a task lands, `/babysit` can iterate on its PR remotely until merge-ready. Cloud agents start faster when `.cursor/environment.json` is committed.
+
+**Subagent Tree Pattern:**
 
 Each background `sdd-implementer` automatically spawns `sdd-verifier` as a child subagent after completing its work. This means verification happens inside the subagent tree without blocking the orchestrator.
 
@@ -122,7 +124,6 @@ Task 1: {
    - `timestamp`: ISO8601
    - `batchNumber`: incrementing batch index
 4. **Identify next ready tasks** based on completed dependencies
-5. The `subagentStop` hook in `.cursor/hooks.json` auto-logs completion to ignored local logs under `.cursor/logs/`
 
 **Progress Report Format:**
 
@@ -218,5 +219,4 @@ Checkpoint is written after each batch during `--until-finish` runs.
 - `/sdd-full-plan` — Create roadmap with DAG
 - `/execute-task` — Execute single task sequentially
 - `sdd-orchestrator` subagent — Detailed orchestration logic
-- `.cursor/hooks.json` — Auto-tracks subagent completion
 - `.cursor/commands/_shared/agent-manual.md` — Full agent protocol

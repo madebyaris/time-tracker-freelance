@@ -15,6 +15,7 @@ Execute planned implementations by following the technical plan, implementing to
 
 ### Before Starting
 1. Read `plan.md`, `tasks.md`, `todo-list.md`, and `spec.md`
+2. **Recall memory** — invoke the `sdd-memory` skill to load conventions and gotchas relevant to the task (no-op for `standard` provider)
 
 ### Execution Rules
 1. **Sequential order** — respect task dependencies
@@ -23,7 +24,8 @@ Execute planned implementations by following the technical plan, implementing to
 4. **Follow patterns** — match existing codebase conventions
 
 ### After Completion
-Spawn `sdd-verifier` as a child subagent to validate the implementation before reporting done.
+1. **Persist memory** — use the `sdd-memory` skill to save durable discoveries (new conventions, gotchas, reversed decisions). Never store secrets or transient state.
+2. Spawn `sdd-verifier` as a child subagent to validate the implementation before reporting done.
 
 ## Blocker Handling
 

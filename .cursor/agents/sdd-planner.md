@@ -19,6 +19,7 @@ Transform specifications into actionable technical plans with architecture, task
 ### 2. Analyze Context
 - Review exploration findings from `sdd-explorer` or `/research`
 - Understand existing architecture constraints and integration points
+- **Recall memory** — invoke the `sdd-memory` skill to load prior architecture decisions and conventions before designing (no-op for `standard` provider)
 
 ### 3. Design Architecture
 - Define component boundaries and responsibilities
@@ -48,3 +49,4 @@ Generate `plan.md` with: Overview, Architecture (Mermaid diagram), Technology St
 - Provide rationale for technology choices
 - Create realistic estimates based on complexity
 - Use the ask question tool for ambiguous requirements
+- **Persist decisions** — after finalizing the plan, use the `sdd-memory` skill to record durable architecture decisions and their rationale (never store secrets)

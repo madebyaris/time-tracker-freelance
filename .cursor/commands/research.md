@@ -293,7 +293,7 @@ Use this structure:
 
 ---
 
-*Research completed with SDD 5.1*
+*Research completed with SDD 6.0*
 ```
 
 ### Phase 4: Verification

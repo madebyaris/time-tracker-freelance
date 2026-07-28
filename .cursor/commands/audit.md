@@ -53,6 +53,8 @@ Read in order:
 3. Compare code against spec/plan requirements
 4. Look for gaps: missing features, logic errors, security issues, quality problems
 
+**Cursor 3.8+ — run native reviewers first:** Use `/review` (or `/review-bugbot` + `/review-security`) to get fast Bugbot/Security findings before the manual pass, then concentrate this audit on **spec compliance** — the gap native reviewers don't cover. Fold their findings into the report below so there's one consolidated list.
+
 ### Phase 3: Generate Findings
 
 **For each issue, document:**
@@ -109,7 +111,7 @@ Read in order:
 - "Mark #N as outdated" - Code correct, update spec
 ```
 
-*Audit report generated with SDD 5.1*
+*Audit report generated with SDD 6.0*
 
 ---
 

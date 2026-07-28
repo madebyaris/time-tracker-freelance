@@ -1,17 +1,17 @@
 # Roadmap Format Specification
 
 **Version:** 2.0.0  
-**Compatible With:** SDD 5.1, Taskr Kanban, VSCode Extensions, Cursor 3.2+  
-**Last Updated:** 2026-02-18
+**Compatible With:** SDD 6.0, Taskr Kanban, VSCode Extensions, Cursor 3.8+  
+**Last Updated:** 2026-06-22
 
-## Cursor 3.2 Integration
+## Cursor 3.8 Integration
 
-This format works seamlessly with Cursor 3.2 features:
+This format works seamlessly with Cursor 3.8 features:
 
 - **Async Subagents** - Execute multiple tasks in parallel via `sdd-orchestrator`
-- **Subagent Tree** - Nested subagent spawning for complex task execution
+- **Subagent Tree** - Nested subagent spawning to any depth for complex task execution
 - **Skills** - Progressive loading of SDD knowledge via `.cursor/skills/`
-- **Hooks** - Automated tracking via `.cursor/hooks.json`
+- **Cloud Subagents** - Offload long-running tasks with `/in-cloud`; `/babysit` drives PRs to merge-ready
 
 ---
 
@@ -430,7 +430,7 @@ Future VSCode extensions can:
 6. **Update status** - Sync changes back to JSON
 7. **Track progress** - Calculate completion percentage
 
-### Cursor 2.5 Subagent Support
+### Subagent Support
 
 **Parallel Execution via `sdd-orchestrator`:**
 - Execute multiple independent tasks via async subagents
@@ -542,9 +542,13 @@ See [FULL_PLAN_EXAMPLES.md](./FULL_PLAN_EXAMPLES.md) for complete examples of:
 
 ## Versioning
 
-**Current Version:** 2.1.0
+**Current Version:** 2.2.0
 
 **Version History:**
+- **2.2.0** (2026-06-22): SDD 6.0 / Cursor 3.8 update
+  - Cursor 3.8 alignment: cloud subagents (`/in-cloud`, `/babysit`), native review (`/review`), pluggable memory
+  - Removed session/subagent logging hooks
+  - SDD version metadata bumped to 6.0
 - **2.1.0** (2026-05-01): SDD 5.1 / Cursor 3.2 update
   - Cursor 3.2 multitask, worktree, and multi-root alignment
   - SDD version metadata bumped to 5.1

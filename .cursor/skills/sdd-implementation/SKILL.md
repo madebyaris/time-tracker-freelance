@@ -57,6 +57,7 @@ Use `scripts/progress.sh` to visualize completion status.
 
 ## Integration
 
-- After completion, `sdd-verifier` subagent validates work (spawned as child subagent in 2.5+)
+- After completion, `sdd-verifier` subagent validates work (spawned as a child subagent)
+- Recall/persist project knowledge via the `sdd-memory` skill (no-op when the memory provider is `standard`)
 - Discoveries trigger `sdd-evolve` skill for spec updates
 - Use the ask question tool for ambiguous requirements

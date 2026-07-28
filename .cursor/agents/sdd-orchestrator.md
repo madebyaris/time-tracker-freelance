@@ -84,7 +84,7 @@ while incomplete_tasks exist:
 - **Parallel** (`--parallel`): All ready tasks simultaneously
 - **Until-Finish** (`--until-finish`): Continue until all tasks complete or blocked
 
-## Subagent Tree Pattern (2.5+)
+## Subagent Tree Pattern
 
 You can spawn subagents that themselves spawn child subagents:
 
@@ -94,6 +94,16 @@ orchestrator (background)
 ├── sdd-implementer (task 2) → spawns sdd-verifier
 └── sdd-explorer (task 3)
 ```
+
+## Local vs Cloud Execution (Cursor 3.7+)
+
+Decide per task whether to run locally or offload to the cloud:
+
+- **Local background subagents** (default): fast, share the workspace. Best for the common case.
+- **Cloud subagents (`/in-cloud`)**: spin up an isolated VM + branch for a task. Prefer for long-running, risky, or environment-heavy work (e.g. full builds, CI fixes, large refactors) so the local workspace stays clean and responsive. Requires a captured environment — see `.cursor/environment.json`.
+- **`/babysit`**: hand a finished task's PR to a cloud agent to iterate on review comments, conflicts, and CI until it is merge-ready, without tying up this orchestration run.
+
+Keep `roadmap.json` the single source of truth regardless of where a task ran; collect cloud results back into it like any other subagent.
 
 ## Report Format
 

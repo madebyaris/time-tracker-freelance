@@ -133,7 +133,7 @@ Ready to generate the full task breakdown?
 
 ---
 
-*Tasks created with SDD 5.1*
+*Tasks created with SDD 6.0*
 ```
 
 ### Verification

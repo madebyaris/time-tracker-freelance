@@ -1,4 +1,4 @@
-# Spec-Driven Development Guidelines v5.1
+# Spec-Driven Development Guidelines v6.0
 
 ## Overview
 
@@ -54,9 +54,9 @@ Common mistakes to detect:
 | `/audit` | `sdd-reviewer` | foreground, readonly |
 | `/execute-parallel` | `sdd-orchestrator` | background |
 
-### Subagent Tree (Cursor 2.5)
+### Subagent Tree
 
-Subagents can spawn child subagents:
+Subagents can spawn child subagents to any depth:
 - `sdd-orchestrator` spawns multiple `sdd-implementer` instances
 - `sdd-implementer` spawns `sdd-verifier` after completion
 
@@ -138,6 +138,18 @@ Auto-generate Cursor rules based on tech stack detection.
 - **Output**: `.cursor/rules/*.mdc` files
 - **Use for**: New projects, establishing conventions
 
+#### `/sdd-memory` - Configure Memory Backend
+Choose how SDD remembers project knowledge across sessions.
+- **Providers**: `standard` (rules-only, default), `cursor-native` (Cursor 3.8 Memories), `mem0` (free self-host semantic memory)
+- **Output**: updated `.sdd/config.json` `memory` block
+- **Use for**: Enabling long-term recall of decisions, conventions, and gotchas
+- **Skill**: `sdd-memory` recalls before planning/implementing and persists durable discoveries after. Never stores secrets. No-op for `standard`.
+
+### Native Review & Cloud (Cursor 3.8)
+
+- **`/review`** (or `/review-bugbot` / `/review-security`) — run Bugbot + Security Review before pushing; `sdd-reviewer` and `/audit` fold the findings in and add the spec-compliance verdict.
+- **`/in-cloud`** — run long-running or risky tasks on an isolated cloud VM + branch; **`/babysit`** drives a PR to merge-ready remotely. `.cursor/environment.json` speeds cloud startup.
+
 ### Project Planning
 
 #### `/sdd-full-plan` (or `/pecut-all-in-one`)
@@ -201,10 +213,11 @@ specs/
 │   ├── sdd-planning/
 │   ├── sdd-implementation/
 │   ├── sdd-audit/
-│   └── sdd-evolve/
+│   ├── sdd-evolve/
+│   └── sdd-memory/             # Pluggable long-term memory
 ├── rules/
 │   └── sdd-system.mdc          # Always-applied SDD rules
-├── hooks.json                  # Automated subagent tracking
+├── environment.json            # Cloud agent environment setup (3.7+)
 └── sandbox.json                # Network access controls
 ```
 

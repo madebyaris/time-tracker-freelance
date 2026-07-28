@@ -1,0 +1,29 @@
+{
+  "name": "sdd-spec-kit",
+  "displayName": "SDD Spec Kit",
+  "version": "6.0.0",
+  "description": "Spec-Driven Development framework for Cursor 3.8 — subagents, skills, DAG-based parallel + cloud execution, native review integration, and a pluggable memory layer (standard / Cursor-native / mem0). Plan-approve-execute workflow for systematic feature development.",
+  "author": {
+    "name": "spec-kit",
+    "email": ""
+  },
+  "license": "MIT",
+  "engines": {
+    "cursor": ">=3.8.0"
+  },
+  "keywords": [
+    "sdd",
+    "spec-driven-development",
+    "planning",
+    "subagents",
+    "parallel-execution",
+    "dag",
+    "code-review",
+    "verification",
+    "skills",
+    "agents",
+    "memory",
+    "mem0",
+    "cloud-agents"
+  ]
+}

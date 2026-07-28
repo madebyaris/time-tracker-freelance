@@ -1,14 +1,14 @@
 # Team Commands Setup Guide
 
-**Feature:** Cursor 2.5 Team Commands Integration  
-**Date:** 2026-02-18  
+**Feature:** Cursor Team Commands Integration  
+**Date:** 2026-06-22  
 **Status:** ✅ Ready
 
 ---
 
 ## Overview
 
-Cursor 2.5 allows you to define custom commands in the dashboard that are automatically shared with your entire team. This guide shows how to set up SDD commands for team-wide use.
+Cursor lets you define custom commands in the dashboard that are automatically shared with your entire team. This guide shows how to set up SDD commands for team-wide use.
 
 ## Benefits
 
@@ -83,7 +83,7 @@ For each SDD command:
 
 ## SDD Commands to Add
 
-### Primary Commands (SDD 5.1)
+### Primary Commands (SDD 6.0)
 
 1. **`brief`** - Quick feature planning
    - Source: `.cursor/commands/brief.md`
@@ -112,7 +112,7 @@ For each SDD command:
    - Usage: `/execute-task [task-id]`
    - Team-wide: ✅ Recommended
 
-### Advanced Commands (SDD 5.1 Full Planning)
+### Advanced Commands (SDD 6.0 Full Planning)
 
 6. **`research`** - Pattern investigation
    - Source: `.cursor/commands/research.md`
@@ -333,7 +333,7 @@ Use: /brief user-notifications Add notifications
 ### Commands Not Appearing
 
 **Check:**
-- Cursor version (2.5+ required)
+- Cursor version (3.8+ required)
 - Team membership confirmed
 - Dashboard permissions set
 - Command visibility settings
@@ -487,6 +487,6 @@ Use: /brief user-notifications Add notifications
 ---
 
 **Status:** Ready for team adoption  
-**Last Updated:** 2026-02-18  
-**Cursor Version Required:** 2.5+
+**Last Updated:** 2026-06-22  
+**Cursor Version Required:** 3.8+
 

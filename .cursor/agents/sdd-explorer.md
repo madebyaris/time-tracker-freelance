@@ -26,6 +26,7 @@ Explore the codebase to discover existing patterns, reusable components, technic
 ### Phase 3: External Context
 1. Check related documentation and tests
 2. Review existing specs in `specs/`
+3. **Recall memory** — invoke the `sdd-memory` skill to load prior decisions, conventions, and gotchas for this area (no-op when `memory.provider` is `standard`). Surface any recalled fact that conflicts with the current direction.
 
 ## Output Format
 

@@ -1,0 +1,5 @@
+{
+  "$schema": "https://cursor.com/schemas/environment.json",
+  "install": "corepack enable && pnpm install --frozen-lockfile",
+  "terminals": []
+}

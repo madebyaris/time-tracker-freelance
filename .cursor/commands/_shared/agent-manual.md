@@ -1,6 +1,6 @@
-# SDD Agent Manual (v5.1)
+# SDD Agent Manual (v6.0)
 
-Consolidated agent protocol for SDD workflows. **Requires Cursor 3.2+** for async subagents, hooks, plugins, agent multitasking, worktrees, and multi-root sessions.
+Consolidated agent protocol for SDD workflows. **Requires Cursor 3.8+** for async subagents, nested subagent trees, skills, plugins, cloud subagents (`/in-cloud`, `/babysit`), native review (`/review`), Memories, agent multitasking, worktrees, and multi-root sessions.
 
 ---
 
@@ -39,10 +39,9 @@ specs/
 
 .cursor/
 ├── agents/                     # Subagents (foreground + background)
-├── skills/                     # Domain knowledge packages
+├── skills/                     # Domain knowledge packages (incl. sdd-memory)
 ├── commands/                   # Slash commands
-├── hooks.json                  # Workflow automation hooks
-├── hooks/                      # JSON-stdin hook scripts
+├── environment.json            # Cloud agent environment setup (3.7+)
 ├── worktrees.json              # Cursor worktree setup
 ├── sandbox.json                # Network access controls
 └── rules/                      # Always-applied rules
@@ -50,7 +49,7 @@ specs/
 
 ---
 
-## Subagents (Cursor 3.2+)
+## Subagents (Cursor 3.8+)
 
 Subagents run in **isolated context**. Use them for operations that would bloat the main conversation.
 
@@ -70,9 +69,9 @@ Subagents run in **isolated context**. Use them for operations that would bloat 
 - **Foreground**: Blocks parent until complete. Use when results are needed immediately (exploration, planning, verification).
 - **Background** (`is_background: true`): Returns immediately, parent continues working. Use for long-running implementations and orchestration.
 
-### Subagent Tree (2.5+)
+### Subagent Tree
 
-Subagents can spawn their own subagents, creating a tree of coordinated work:
+Subagents can spawn their own subagents to any depth, creating a tree of coordinated work:
 
 ```
 sdd-orchestrator (background)
@@ -112,13 +111,15 @@ Use the Task tool to spawn subagents:
 
 **Background subagents:** Set `is_background: true` in the agent file. The parent continues working while the subagent runs.
 
-### Cursor 3.2 Multitask and Worktrees
+### Cursor 3.8 Multitask, Worktrees, and Cloud
 
-Use Cursor 3.2's native `/multitask` for ad hoc independent requests, especially when there is no SDD roadmap to update. Use SDD `/execute-parallel` when work must respect roadmap dependencies, file-conflict batching, checkpoints, or mandatory verifier handoffs.
+Use Cursor's native `/multitask` for ad hoc independent requests, especially when there is no SDD roadmap to update. Use SDD `/execute-parallel` when work must respect roadmap dependencies, file-conflict batching, checkpoints, or mandatory verifier handoffs.
 
 Use Agents Window worktrees for parallel or risky implementation attempts. `.cursor/worktrees.json` prepares the isolated checkout; keep setup commands lightweight and avoid assuming one package manager unless the target project declares one.
 
-For multi-root workspaces, always resolve generated files, hooks, specs, and roadmap updates from the active project root. Do not write cross-repo state unless the command explicitly targets that root.
+**Cloud subagents (3.7+):** Offload long-running, risky, or environment-heavy tasks with `/in-cloud` — each runs on its own VM and branch so the local workspace stays responsive. Use `/babysit` to have a cloud agent prepare a PR for merge (resolve comments, conflicts, CI). Commit `.cursor/environment.json` so cloud agents start faster.
+
+For multi-root workspaces, always resolve generated files, specs, and roadmap updates from the active project root. Do not write cross-repo state unless the command explicitly targets that root.
 
 ### Automatic Verification
 
@@ -144,7 +145,7 @@ These two agents serve distinct purposes — do not confuse them:
 
 ---
 
-## Skills (Cursor 3.2+)
+## Skills (Cursor 3.8+)
 
 Skills are auto-invoked based on context or manually via `/skill-name`.
 
@@ -157,6 +158,7 @@ Skills are auto-invoked based on context or manually via `/skill-name`.
 | `sdd-implementation` | Plan ready for execution |
 | `sdd-audit` | Code review requested |
 | `sdd-evolve` | Discoveries during dev |
+| `sdd-memory` | Start/finish of planning or implementation (recall + persist) |
 
 ### Skill Structure
 
@@ -172,24 +174,30 @@ Skills use progressive loading — keep main `SKILL.md` focused:
 
 ---
 
-## Hooks (Cursor 3.2+)
+## Memory (Cursor 3.8+)
 
-SDD uses hooks (`.cursor/hooks.json`) for workflow automation:
+SDD long-term memory is **optional and pluggable**, configured in `.sdd/config.json` → `memory` and managed with `/sdd-memory`:
 
-| Hook | Trigger | Purpose |
-|------|---------|---------|
-| `subagentStop` | Subagent completes | Track completion in roadmap |
-| `stop` | Agent session ends | Generate completion summary |
+| Provider | Setup | Notes |
+|----------|-------|-------|
+| `standard` *(default)* | none | Rules-only; relies on `.cursor/rules/` + `specs/`. No persistent store. |
+| `cursor-native` | toggle on | Cursor 3.8 Memories — all plans (Free/Pro/Team), individual level. Needs Privacy Mode off + "Generate Memories" enabled. |
+| `mem0` | mem0 MCP / local API | Free self-host semantic memory across sessions. |
 
-Hooks can block actions (exit code 2), log events, or trigger follow-up automation. See [Cursor hooks docs](https://cursor.com/docs/agent/hooks).
-
-### Claude Code Compatibility
-
-Hooks are compatible with Claude Code format (`.claude/settings.json`). Hook names are automatically mapped between tools.
+The `sdd-memory` skill **recalls** relevant decisions/conventions/gotchas before planning or implementing, and **persists** durable discoveries afterward. When `standard`, it is a no-op. **Never store secrets in memory.**
 
 ---
 
-## Sandbox (Cursor 3.2+)
+## Native Review (Cursor 3.8+)
+
+Prefer Cursor's first-party reviewers for mechanical checks, then let SDD agents own spec compliance:
+
+- `/review` lets you pick Bugbot + Security Review; `/review-bugbot` and `/review-security` run them directly. Bugbot (Composer 2.5) reviews in ~90s and syncs with GitHub/GitLab so the same diff isn't re-reviewed on PR.
+- `sdd-reviewer` and `/audit` fold native findings into one consolidated report and add the spec-compliance verdict native reviewers don't provide.
+
+---
+
+## Sandbox (Cursor 3.8+)
 
 Network access controls for sandboxed commands are configured in `.cursor/sandbox.json`:
 
@@ -290,11 +298,11 @@ Batch 2 (deps satisfied):
 - Run tests when available
 - Compare code to spec requirements
 
-### Hooks Integration
-- `subagentStop` hook tracks completion automatically in local ignored logs under `.cursor/logs/`
-- Use hooks for consistent file output processing
-- Claude Code hooks are compatible via `.claude/settings.json`
+### Memory Integration
+- Recall at the start of planning/implementation; persist durable discoveries at the end (via `sdd-memory` skill)
+- Provider is set in `.sdd/config.json`; `standard` keeps the toolkit dependency-free
+- Never persist secrets, tokens, or full file dumps
 
 ---
 
-*SDD Agent Manual v5.1 — Cursor 3.2 optimized (Async Subagents + Hooks + Worktrees + Multi-root)*
+*SDD Agent Manual v6.0 — Cursor 3.8 optimized (Async + Nested Subagents + Cloud + Native Review + Memory + Worktrees + Multi-root)*

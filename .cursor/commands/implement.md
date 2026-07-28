@@ -54,6 +54,8 @@ Read planning documents in order:
 
 Check for existing `todo-list.md` in the task directory.
 
+**Recall memory:** Invoke the `sdd-memory` skill to load relevant conventions and gotchas before coding (no-op when the configured provider is `standard`).
+
 ### Phase 2: Planning
 
 Present implementation plan before starting:
@@ -103,7 +105,7 @@ Spawn `sdd-verifier` subagent to independently validate:
 - [ ] Tests pass (if applicable)
 - [ ] Spec requirements met
 
-The `subagentStop` hook in `.cursor/hooks.json` auto-logs completion to ignored local logs under `.cursor/logs/`.
+**Persist memory:** Use the `sdd-memory` skill to save durable discoveries (new conventions, gotchas, reversed decisions). No-op for the `standard` provider; never store secrets.
 
 ---
 
@@ -146,7 +148,7 @@ The `subagentStop` hook in `.cursor/hooks.json` auto-logs completion to ignored 
 
 ## Subagent Delegation
 
-For long implementations, the main agent delegates to `sdd-implementer` (background subagent). The implementer spawns `sdd-verifier` as a child subagent after completing work — this is the subagent tree pattern supported by Cursor 3.2+.
+For long implementations, the main agent delegates to `sdd-implementer` (background subagent). The implementer spawns `sdd-verifier` as a child subagent after completing work — this is the subagent tree pattern supported by Cursor 3.8+.
 
 ## Related Commands
 

@@ -13,14 +13,14 @@ This document provides comprehensive examples of using `/sdd-full-plan` and `/pe
 5. [Task Execution Flow](#task-execution-flow)
 6. [Tips and Best Practices](#tips-and-best-practices)
 
-## Cursor 2.5 Features
+## Cursor 3.8 Features
 
-This guide leverages Cursor 2.5 capabilities:
+This guide leverages Cursor 3.8 capabilities:
 
 - **Async Subagents** - Parallel task execution via `sdd-orchestrator`
-- **Subagent Tree** - Nested spawning for complex workflows
+- **Subagent Tree** - Nested spawning (any depth) for complex workflows
 - **Skills** - Progressive loading of SDD knowledge
-- **Hooks** - Automated tracking of subagent completion
+- **Cloud Subagents** - Offload long-running work with `/in-cloud`; `/babysit` for PR prep
 - **DAG Execution** - Dependency-aware parallel task batches
 
 ---

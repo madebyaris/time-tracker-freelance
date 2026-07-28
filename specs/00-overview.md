@@ -33,7 +33,7 @@ flowchart LR
 | Shared domain | `packages/shared` | Sync protocol, time helpers, money helpers |
 | UI | `packages/ui` | Shared React primitives used by desktop/web |
 | Invoice PDF | `packages/invoice-pdf` | `@react-pdf/renderer` invoice document template |
-| SDD system | `.cursor/` | Cursor rules, commands, agents, skills, hooks, and sandbox configuration |
+| SDD system | `.cursor/` | Cursor rules, commands, agents, skills, sandbox, and cloud environment config |
 
 ## Current Shipped Feature Specs
 
@@ -60,6 +60,7 @@ flowchart LR
 | **Quick Planning** | `/brief` → `/evolve` → `/refine` | Small features and follow-up refinements |
 | **Full Planning** | `/research` → `/specify` → `/plan` → `/tasks` → `/implement` | Complex features |
 | **Parallel Execution** | `/sdd-full-plan` → `/execute-parallel` | Roadmap-style feature sets |
+| **Memory (optional)** | `/sdd-memory` | Cross-session recall of decisions/conventions |
 
 ## Spec Directory Structure
 
@@ -90,4 +91,4 @@ specs/
 - [System Rule](../.cursor/rules/sdd-system.mdc)
 
 ---
-**Version:** SDD 5.0 | **Requires:** Cursor 2.5+
+**Version:** SDD 6.0 | **Requires:** Cursor 3.8+
