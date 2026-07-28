@@ -55,9 +55,6 @@ pub fn setup<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             ..
         } = event
         {
-            // The panel always docks at the bottom-center of the user's
-            // current monitor — so we just use the click as a hint for
-            // which monitor we're on, not for the actual anchor point.
             let hint = PhysicalPosition::new(position.x, position.y);
             toggle_panel(tray.app_handle(), hint);
         }
@@ -84,10 +81,19 @@ pub fn setup<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     Ok(())
 }
 
-/// Show / focus the panel docked at the bottom-center of the screen.
-/// Used by the `Cmd+Shift+Space` global shortcut.
+/// Show / focus the panel, anchored the same way a tray click would.
+/// Used by the quick-panel global shortcut.
 pub fn show_panel_at_tray<R: Runtime>(app: &AppHandle<R>) {
-    // Use the tray-icon position only as a "which monitor?" hint.
+    // Unlike a tray click, callers such as the global shortcut and
+    // `tickr://panel` explicitly request that the panel be open. Do not toggle
+    // it closed when it is already visible.
+    if let Some(panel) = app.get_webview_window("panel") {
+        if panel.is_visible().unwrap_or(false) {
+            let _ = panel.set_focus();
+            return;
+        }
+    }
+
     let hint = app
         .tray_by_id("main")
         .and_then(|tray| tray.rect().ok().flatten())
@@ -117,8 +123,24 @@ fn hide_panel<R: Runtime>(app: &AppHandle<R>) {
     }
 }
 
-/// Toggle the panel — show docked at the bottom-center of the monitor
-/// the `hint` falls on (Spotlight-style), hide if already visible.
+/// Gap between the panel and the edge of the usable screen area.
+const PANEL_MARGIN: f64 = 8.0;
+
+/// The part of a monitor not covered by system chrome — menu bar and Dock on
+/// macOS, the taskbar on Windows, panels on Linux.
+struct WorkArea {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+}
+
+/// Toggle the panel, or hide it if already visible.
+///
+/// On macOS the menu bar is always at the top, so the tray icon's x is a real
+/// anchor and the panel hangs beneath it. Everywhere else the tray lives in a
+/// taskbar the user can move to any edge, so anchoring to the icon would put the
+/// panel in an unpredictable place — it centres in the work area instead.
 fn toggle_panel<R: Runtime>(app: &AppHandle<R>, hint: PhysicalPosition<f64>) {
     let Some(panel) = app.get_webview_window("panel") else {
         return;
@@ -132,44 +154,64 @@ fn toggle_panel<R: Runtime>(app: &AppHandle<R>, hint: PhysicalPosition<f64>) {
     let panel_size = panel.outer_size().unwrap_or_default();
     let panel_w = panel_size.width as f64;
     let panel_h = panel_size.height as f64;
+    let area = work_area_for(&panel, hint);
 
-    // Default to the primary monitor; override if the hint falls on a
-    // specific monitor (multi-display setups).
-    let mut anchor: Option<(f64, f64, f64, f64)> = None; // (mx, my, mw, mh)
-
-    if let Ok(monitors) = panel.available_monitors() {
-        for monitor in &monitors {
-            let pos = monitor.position();
-            let size = monitor.size();
-            let mx = pos.x as f64;
-            let my = pos.y as f64;
-            let mw = size.width as f64;
-            let mh = size.height as f64;
-            if hint.x >= mx && hint.x <= mx + mw && hint.y >= my && hint.y <= my + mh {
-                anchor = Some((mx, my, mw, mh));
-                break;
-            }
-        }
-        if anchor.is_none() {
-            if let Ok(Some(primary)) = panel.primary_monitor() {
-                let pos = primary.position();
-                let size = primary.size();
-                anchor = Some((
-                    pos.x as f64,
-                    pos.y as f64,
-                    size.width as f64,
-                    size.height as f64,
-                ));
-            }
-        }
-    }
-
-    let (mx, my, mw, mh) = anchor.unwrap_or((0.0, 0.0, 1440.0, 900.0));
-    // Bottom-center, with breathing room above the Dock.
-    let x = mx + (mw - panel_w) / 2.0;
-    let y = my + mh - panel_h - 96.0;
+    let max_x = (area.x + area.width - panel_w - PANEL_MARGIN).max(area.x + PANEL_MARGIN);
+    let (x, y) = if cfg!(target_os = "macos") {
+        (
+            (hint.x - panel_w / 2.0).clamp(area.x + PANEL_MARGIN, max_x),
+            area.y + PANEL_MARGIN,
+        )
+    } else {
+        (
+            area.x + (area.width - panel_w) / 2.0,
+            area.y + area.height - panel_h - PANEL_MARGIN,
+        )
+    };
 
     let _ = panel.set_position(PhysicalPosition::new(x, y));
     let _ = panel.show();
     let _ = panel.set_focus();
+}
+
+/// Work area of the monitor the `hint` lands on, falling back to the primary
+/// monitor and finally to a conservative guess if the runtime tells us nothing.
+///
+/// Containment is tested against full monitor bounds rather than the work area,
+/// because the tray icon itself sits *inside* the system chrome the work area
+/// excludes.
+fn work_area_for<R: Runtime>(
+    panel: &tauri::WebviewWindow<R>,
+    hint: PhysicalPosition<f64>,
+) -> WorkArea {
+    let containing = panel.available_monitors().ok().and_then(|monitors| {
+        monitors.into_iter().find(|monitor| {
+            let pos = monitor.position();
+            let size = monitor.size();
+            let (mx, my) = (pos.x as f64, pos.y as f64);
+            hint.x >= mx
+                && hint.x <= mx + size.width as f64
+                && hint.y >= my
+                && hint.y <= my + size.height as f64
+        })
+    });
+
+    let monitor = containing.or_else(|| panel.primary_monitor().ok().flatten());
+
+    monitor
+        .map(|monitor| {
+            let area = monitor.work_area();
+            WorkArea {
+                x: area.position.x as f64,
+                y: area.position.y as f64,
+                width: area.size.width as f64,
+                height: area.size.height as f64,
+            }
+        })
+        .unwrap_or(WorkArea {
+            x: 0.0,
+            y: 0.0,
+            width: 1440.0,
+            height: 900.0,
+        })
 }

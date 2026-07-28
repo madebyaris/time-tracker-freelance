@@ -4,7 +4,7 @@ version = "0.5.0"
 description = "Tickr — indie freelancer time tracker"
 authors = ["you"]
 edition = "2021"
-rust-version = "1.77"
+rust-version = "1.77.2"
 
 [lib]
 name = "tickr_lib"
@@ -23,11 +23,18 @@ tauri-plugin-fs = "2.0"
 tauri-plugin-os = "2.0"
 tauri-plugin-shell = "2.0"
 tauri-plugin-store = "2.1"
+tauri-plugin-autostart = "2.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 log = "0.4"
 tauri-plugin-log = "2.0"
 tokio = { version = "1", features = ["time", "rt"] }
+tauri-plugin-deep-link = "2"
+
+# Native panel blur. Already in the tree transitively via Tauri; declared here
+# so `apply_vibrancy` can be called directly.
+[target.'cfg(target_os = "macos")'.dependencies]
+window-vibrancy = "0.6"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

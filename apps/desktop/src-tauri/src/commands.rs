@@ -13,17 +13,11 @@ pub fn calendar_stub() -> Vec<String> {
     vec![]
 }
 
-/// Returns macOS system idle time in seconds. Stub on non-macOS platforms.
+/// Seconds since the last system-wide user input. Implemented on macOS and
+/// Windows; returns 0 elsewhere, which the idle watcher reads as "not idle".
 #[tauri::command]
 pub fn idle_seconds() -> u64 {
-    #[cfg(target_os = "macos")]
-    {
-        crate::idle::system_idle_seconds()
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        0
-    }
+    crate::idle::system_idle_seconds()
 }
 
 #[tauri::command]
@@ -44,4 +38,22 @@ pub fn hide_window<R: Runtime>(app: AppHandle<R>) {
 #[tauri::command]
 pub fn quit_app<R: Runtime>(app: AppHandle<R>) {
     app.exit(0);
+}
+
+/// Show or hide the macOS Dock icon.
+///
+/// Tickr is tray-first, so some people want it out of the Dock entirely. It is
+/// opt-in because hiding the icon also removes the app from Cmd-Tab. No-op on
+/// other platforms.
+#[tauri::command]
+pub fn set_dock_icon_visible<R: Runtime>(app: AppHandle<R>, visible: bool) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        app.set_dock_visibility(visible).map_err(|e| e.to_string())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (app, visible);
+        Ok(())
+    }
 }

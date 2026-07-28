@@ -18,7 +18,7 @@ import {
   decodeEntryTarget,
   encodeEntryTarget,
 } from '../lib/time-entry-target';
-import { getEntryBilling } from '../lib/billing';
+import { aggregateTotals } from '../lib/reporting';
 import {
   EntryFormFields,
   centsToRateOverride,
@@ -186,19 +186,12 @@ export function DayView() {
     return entries;
   }, [day, entriesQ.data, running]);
 
-  const totalSeconds = displayEntries.reduce(
-    (sum, e) => sum + entryDurationSeconds(e),
-    0,
+  const totals = useMemo(
+    () => aggregateTotals(displayEntries, projById, clientById),
+    [displayEntries, projById, clientById],
   );
-
-  const billableSeconds = displayEntries
-    .filter((entry) => {
-      const project = entry.project_id ? projById.get(entry.project_id) : null;
-      const client = (project?.client_id ? clientById.get(project.client_id) : null) ??
-        (entry.client_id ? clientById.get(entry.client_id) : null);
-      return getEntryBilling(entry, project ?? null, client ?? null).rate;
-    })
-    .reduce((sum, e) => sum + entryDurationSeconds(e), 0);
+  const totalSeconds = totals.seconds;
+  const billableSeconds = totals.billableSeconds;
 
   const remove = useMutation({
     mutationFn: (id: string) => TimeEntries.softDelete(id),

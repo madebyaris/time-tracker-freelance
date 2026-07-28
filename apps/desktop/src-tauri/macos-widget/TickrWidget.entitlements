@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  App extensions are always sandboxed, and the conventional way to share data
+	  with the host app is an App Group. App Groups are keyed on a Team ID, which
+	  only an Apple-issued signing certificate can provide, so ad-hoc signed
+	  builds cannot use them.
+
+	  Instead the widget reads a plain JSON file from the (non-sandboxed) app's
+	  Application Support directory, reached through a temporary-exception
+	  entitlement. Temporary exceptions are unrestricted — they need no
+	  provisioning profile — so this works with ad-hoc signing and requires no
+	  Apple Developer Program membership. It is not App Store distributable, which
+	  Tickr is not.
+
+	  Read-only on purpose: the widget displays, it never mutates Tickr's state.
+	-->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.temporary-exception.files.home-relative-path.read-only</key>
+	<array>
+		<string>/Library/Application Support/Tickr/</string>
+	</array>
+</dict>
+</plist>

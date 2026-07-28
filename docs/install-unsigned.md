@@ -41,6 +41,24 @@ xattr -cr /Applications/Tickr.app
 
 Then double-click Tickr normally.
 
+### Desktop widget (macOS 14+)
+
+Packaged macOS builds include a WidgetKit extension. macOS only offers widgets
+from apps installed in **Applications**:
+
+1. Move Tickr.app into `/Applications` and launch it once.
+2. Right-click the desktop → **Edit Widgets**, or open Notification Center and
+   click **Edit Widgets**.
+3. Search for **Tickr** and add the small or medium size.
+
+The widget shows the running timer (live elapsed time) or today's tracked and
+billable totals when idle. Tap the widget background or **Open** to show Tickr;
+use **Pause** / **Resume** for the current timer, or **New** to open the Quick
+Panel and create and run a timer.
+
+No Apple Developer ID is required for the widget. State is shared through a
+file under `~/Library/Application Support/Tickr/`, not an App Group.
+
 ### Why this happens
 
 Apple charges \$99/year for the Developer ID certificate and notarization

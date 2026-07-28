@@ -5,10 +5,22 @@ import { runSync } from '../sync/engine';
 import { exportEntriesCsv } from '../lib/csv';
 import { startOfDay } from '@ttf/shared';
 import { encodeOwnerLogo, encodeSignature } from '../lib/encode-logo';
+import {
+  HIDE_DOCK_ICON_KEY,
+  getShortcutInfo,
+  isAutostartEnabled,
+  isMacOS,
+  setAutostartEnabled,
+  setDockIconVisible,
+  type ShortcutInfo,
+} from '../lib/platform';
+import { IDLE_DETECTION_ENABLED_KEY } from '../lib/idle';
+import { getWidgetStatus, type WidgetStatus } from '../lib/widget-bridge';
 
 export function SettingsView() {
   const [url, setUrl] = useState('');
   const [token, setToken] = useState('');
+  const [idleEnabled, setIdleEnabled] = useState(true);
   const [idleSecs, setIdleSecs] = useState('300');
   const [ownerName, setOwnerName] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
@@ -18,11 +30,27 @@ export function SettingsView() {
   const [ownerSignature, setOwnerSignature] = useState<string | null>(null);
   const [paymentInstructions, setPaymentInstructions] = useState('');
   const [status, setStatus] = useState<string>('');
+  const [autostart, setAutostart] = useState(false);
+  const [hideDock, setHideDock] = useState(false);
+  const [shortcuts, setShortcuts] = useState<ShortcutInfo | null>(null);
+  const [widget, setWidget] = useState<WidgetStatus | null>(null);
+  const [systemError, setSystemError] = useState('');
+  const macOS = isMacOS();
+
+  useEffect(() => {
+    void (async () => {
+      setAutostart(await isAutostartEnabled());
+      setHideDock((await Settings.get(HIDE_DOCK_ICON_KEY)) === '1');
+      setShortcuts(await getShortcutInfo());
+      setWidget(await getWidgetStatus());
+    })();
+  }, []);
 
   useEffect(() => {
     void (async () => {
       setUrl((await Settings.get('backend_url')) ?? '');
       setToken((await Settings.get('backend_token')) ?? '');
+      setIdleEnabled((await Settings.get(IDLE_DETECTION_ENABLED_KEY)) !== '0');
       setIdleSecs((await Settings.get('idle_threshold_secs')) ?? '300');
       setOwnerName((await Settings.get('owner_name')) ?? '');
       setOwnerEmail((await Settings.get('owner_email')) ?? '');
@@ -37,6 +65,7 @@ export function SettingsView() {
   async function save() {
     await Settings.set('backend_url', url.trim());
     await Settings.set('backend_token', token.trim());
+    await Settings.set(IDLE_DETECTION_ENABLED_KEY, idleEnabled ? '1' : '0');
     await Settings.set('idle_threshold_secs', idleSecs);
     await Settings.set('owner_name', ownerName.trim());
     await Settings.set('owner_email', ownerEmail.trim());
@@ -59,10 +88,38 @@ export function SettingsView() {
     }
   }
 
+  // These two write straight through rather than waiting for Save — they change
+  // OS-level state, so a pending "unsaved" toggle would misrepresent reality.
+  async function toggleAutostart(next: boolean) {
+    setSystemError('');
+    try {
+      await setAutostartEnabled(next);
+      setAutostart(next);
+    } catch (e) {
+      setSystemError(`Couldn't ${next ? 'enable' : 'disable'} launch at login: ${(e as Error).message}`);
+    }
+  }
+
+  async function toggleHideDock(next: boolean) {
+    setSystemError('');
+    try {
+      await setDockIconVisible(!next);
+      await Settings.set(HIDE_DOCK_ICON_KEY, next ? '1' : '0');
+      setHideDock(next);
+    } catch (e) {
+      setSystemError(`Couldn't change the Dock icon: ${(e as Error).message}`);
+    }
+  }
+
+  async function toggleIdleDetection(next: boolean) {
+    setIdleEnabled(next);
+    await Settings.set(IDLE_DETECTION_ENABLED_KEY, next ? '1' : '0');
+  }
+
   async function exportAll() {
     const start = startOfDay(Date.now() - 365 * 86_400_000);
     const end = Date.now() + 86_400_000;
-    const path = await exportEntriesCsv({ from: start, to: end });
+    const path = await exportEntriesCsv({ from: start, to: end, fileLabel: 'all' });
     if (path) setStatus(`Exported to ${path}`);
   }
 
@@ -171,8 +228,14 @@ export function SettingsView() {
 
       <SettingsGroup
         title="Idle detection"
-        description="Pause tracking suggestions after this many seconds of no input."
+        description="When a timer is running and you stop using the computer, Tickr discards that idle window from the entry and notifies you."
       >
+        <ToggleField
+          label="Detect idle time"
+          hint="Turn off if you leave timers running during meetings, reading, or other work that does not move the mouse or keyboard."
+          checked={idleEnabled}
+          onChange={toggleIdleDetection}
+        />
         <Field>
           <FieldLabel>Threshold (seconds)</FieldLabel>
           <Input
@@ -180,9 +243,81 @@ export function SettingsView() {
             min="60"
             value={idleSecs}
             onChange={(e) => setIdleSecs(e.target.value)}
+            disabled={!idleEnabled}
           />
+          <FieldHint>
+            How long without input before the idle window is discarded. Takes effect after Save.
+          </FieldHint>
         </Field>
       </SettingsGroup>
+
+      <SettingsGroup
+        title="System"
+        description="Startup behaviour, window chrome, and the global shortcuts Tickr claimed."
+      >
+        <ToggleField
+          label="Launch at login"
+          hint="Starts Tickr in the tray when you log in."
+          checked={autostart}
+          onChange={toggleAutostart}
+        />
+
+        {macOS && (
+          <ToggleField
+            label="Hide Dock icon"
+            hint="Runs Tickr from the menu bar only. It also disappears from Cmd-Tab, and the icon still flashes briefly at launch."
+            checked={hideDock}
+            onChange={toggleHideDock}
+          />
+        )}
+
+        {systemError && <span className="text-xs text-red-600">{systemError}</span>}
+
+        {shortcuts && (
+          <Field>
+            <FieldLabel>Global shortcuts</FieldLabel>
+            <div className="flex flex-col gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
+              <ShortcutRow label="Start / stop timer" accelerator={shortcuts.toggleTimer} />
+              <ShortcutRow label="Quick panel" accelerator={shortcuts.quickPanel} />
+            </div>
+            {shortcuts.issues.length > 0 ? (
+              <div className="mt-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+                <div className="font-medium">Some shortcuts could not be registered</div>
+                <ul className="mt-1 flex flex-col gap-0.5">
+                  {shortcuts.issues.map((issue) => (
+                    <li key={issue.action}>
+                      {issue.action} ({issue.accelerator}) — {issue.error}. Another app is probably
+                      using it.
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <FieldHint>Both shortcuts registered. Restart Tickr if one stops responding.</FieldHint>
+            )}
+          </Field>
+        )}
+      </SettingsGroup>
+
+      {widget?.supported && (
+        <SettingsGroup
+          title="Desktop widget"
+          description="A read-only view of the running timer and today's totals, on the macOS desktop or in Notification Center."
+        >
+          {widget.embedded ? (
+            <FieldHint>
+              The widget is bundled with this build. macOS only offers widgets from apps installed
+              in <strong>/Applications</strong>, so move Tickr there and launch it once, then
+              right-click the desktop and choose Edit Widgets to add it. Requires macOS 14 or later.
+            </FieldHint>
+          ) : (
+            <FieldHint>
+              No widget extension in this build — that is expected during{' '}
+              <code>tauri dev</code>, which produces no app bundle. Run a packaged build to get it.
+            </FieldHint>
+          )}
+        </SettingsGroup>
+      )}
 
       <SettingsGroup title="Export" description="Spreadsheet-friendly CSV of every tracked entry.">
         <div>
@@ -208,6 +343,44 @@ export function SettingsView() {
           Save changes
         </Button>
       </div>
+    </div>
+  );
+}
+
+function ToggleField({
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  checked: boolean;
+  onChange: (next: boolean) => void | Promise<void>;
+}) {
+  return (
+    <Field>
+      <FieldLabel>{label}</FieldLabel>
+      <label className="inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900"
+          checked={checked}
+          onChange={(event) => void onChange(event.target.checked)}
+        />
+        {hint && <span>{hint}</span>}
+      </label>
+    </Field>
+  );
+}
+
+function ShortcutRow({ label, accelerator }: { label: string; accelerator: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span>{label}</span>
+      <kbd className="rounded border border-zinc-300/70 bg-zinc-50 px-1.5 py-0.5 font-mono text-[11px] font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+        {accelerator || '—'}
+      </kbd>
     </div>
   );
 }

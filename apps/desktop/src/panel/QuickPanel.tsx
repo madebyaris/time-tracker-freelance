@@ -1,7 +1,8 @@
 /*!
- * QuickPanel — the focused horizontal bar that lives in the macOS menubar
- * tray popover. Spotlight/Raycast-style: one row with a "what are you
- * working on?" input, a project chip, and the shared TimerControls cluster.
+ * QuickPanel — the focused horizontal bar summoned from the tray. On macOS it
+ * hangs under the menubar icon; elsewhere it centres in the monitor work area.
+ * Spotlight/Raycast-style: one row with a "what are you working on?" input, a
+ * project chip, and the shared TimerControls cluster.
  *
  *  idle    → [ Start ]
  *  running → [ 12:34 ] [ ⏸ ] [ Stop ]
@@ -26,8 +27,12 @@ import {
   encodeEntryTarget,
 } from '../lib/time-entry-target';
 import { TimerControls } from '../components/TimerControls';
+import { isMacOS } from '../lib/platform';
 
 export function QuickPanel() {
+  /** Windows and Linux use Ctrl where macOS uses Command. */
+  const openAccelerator = isMacOS() ? '⌘O' : 'Ctrl+O';
+
   const running = useTimer((s) => s.running);
   const tick = useTimer((s) => s.tick);
   const start = useTimer((s) => s.start);
@@ -138,7 +143,7 @@ export function QuickPanel() {
       event.preventDefault();
       void getCurrentWindow().hide();
     }
-    // ⌘O — swap the panel for the full Tickr window.
+    // Swap the panel for the full Tickr window.
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'o') {
       event.preventDefault();
       void openMain();
@@ -206,13 +211,13 @@ export function QuickPanel() {
       <button
         type="button"
         aria-label="Open Tickr main window"
-        title="Open Tickr (⌘O)"
+        title={`Open Tickr (${openAccelerator})`}
         className="ml-1 flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
         onClick={openMain}
       >
         Open
         <kbd className="rounded border border-zinc-300/70 bg-zinc-50 px-1.5 py-0.5 font-mono text-[10px] font-medium text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
-          ⌘O
+          {openAccelerator}
         </kbd>
       </button>
     </div>

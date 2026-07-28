@@ -16,6 +16,12 @@ import { SettingsView } from './views/SettingsView';
 import { useTimer, startTicker } from './state/timer';
 import { getDeviceId } from './lib/device';
 import { startIdleWatcher } from './lib/idle';
+import { applyPlatformPreferences } from './lib/platform';
+import { startWidgetBridge } from './lib/widget-bridge';
+import {
+  schedulePendingTimerActions,
+  TIMER_ACTION_PENDING,
+} from './lib/deep-link-actions';
 import { startSyncLoop } from './sync/loop';
 import { Settings } from './db/repos';
 import { staticQueryOptions } from './lib/query-client';
@@ -24,28 +30,47 @@ export function App() {
   const [tab, setTab] = useState<Tab>('day');
   const initTimer = useTimer((s) => s.init);
   const toggle = useTimer((s) => s.toggle);
-  const start = useTimer((s) => s.start);
-  const stop = useTimer((s) => s.stop);
   const running = useTimer((s) => s.running);
 
   useEffect(() => {
     void getDeviceId();
-    void initTimer();
     startTicker();
     startIdleWatcher();
     startSyncLoop();
+    void applyPlatformPreferences();
+    startWidgetBridge();
+
+    let unlisten: (() => void) | undefined;
+    let disposed = false;
+
+    void (async () => {
+      // A widget URL can cold-launch Tickr before React is ready. Rust queues
+      // pause/resume actions until the timer store is initialized and this
+      // listener is installed, then this drain handles both startup and live
+      // actions without executing either twice.
+      await initTimer();
+      unlisten = await listen(TIMER_ACTION_PENDING, () => {
+        void schedulePendingTimerActions();
+      });
+      if (disposed) {
+        unlisten();
+        return;
+      }
+      await schedulePendingTimerActions();
+    })();
+
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
   }, [initTimer]);
 
   useEffect(() => {
-    const unlistens: Array<Promise<() => void>> = [
-      listen('tray://start', () => start({})),
-      listen('tray://stop', () => stop()),
-      listen('global-shortcut://toggle-timer', () => toggle()),
-    ];
+    const unlisten = listen('global-shortcut://toggle-timer', () => toggle());
     return () => {
-      unlistens.forEach((p) => p.then((fn) => fn()));
+      void unlisten.then((fn) => fn());
     };
-  }, [start, stop, toggle]);
+  }, [toggle]);
 
   // Cmd+1..N to switch tabs (N = tabItems.length).
   useEffect(() => {

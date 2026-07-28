@@ -1,16 +1,20 @@
-mod tray;
 mod commands;
-mod timer_state;
-#[cfg(target_os = "macos")]
+mod deep_links;
 mod idle;
+mod shortcuts;
+mod timer_state;
+mod tray;
+mod widget;
 
-use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::ShortcutState;
 
+use crate::shortcuts::ShortcutStatus;
 use crate::timer_state::TimerState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_sql::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
@@ -19,44 +23,55 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_store::Builder::new().build())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
-                    if event.state == ShortcutState::Pressed {
-                        // ⌥⌘T toggles the timer without forcing the main window open.
-                        if shortcut.matches(Modifiers::ALT | Modifiers::SUPER, Code::KeyT) {
-                            let _ = app.emit_to("main", "global-shortcut://toggle-timer", ());
-                        }
-                        // ⇧⌘Space summons the quick panel anchored on the tray icon.
-                        if shortcut.matches(Modifiers::SHIFT | Modifiers::SUPER, Code::Space) {
-                            tray::show_panel_at_tray(app);
-                        }
+                    if event.state != ShortcutState::Pressed {
+                        return;
+                    }
+                    // Toggles the timer without forcing the main window open.
+                    if shortcuts::toggle_timer().matches(shortcut) {
+                        let _ = app.emit_to("main", "global-shortcut://toggle-timer", ());
+                    }
+                    // Summons the quick panel anchored on the tray icon.
+                    if shortcuts::quick_panel().matches(shortcut) {
+                        tray::show_panel_at_tray(app);
                     }
                 })
                 .build(),
         )
+        .manage(deep_links::PendingTimerActions::default())
         .manage(TimerState::new())
+        .manage(ShortcutStatus::new())
         .invoke_handler(tauri::generate_handler![
             commands::idle_seconds,
             commands::frontmost_app_stub,
             commands::calendar_stub,
             commands::show_window,
             commands::hide_window,
-            commands::quit_app
+            commands::quit_app,
+            commands::set_dock_icon_visible,
+            deep_links::take_pending_timer_actions,
+            shortcuts::shortcut_info,
+            widget::write_widget_state,
+            widget::widget_status
         ])
         .setup(|app| {
             // Tray icon — primary affordance on macOS
             tray::setup(app.handle())?;
 
-            // Register global toggle (⌥⌘T) and quick-panel (⇧⌘Space) shortcuts.
-            let toggle = Shortcut::new(Some(Modifiers::ALT | Modifiers::SUPER), Code::KeyT);
-            let panel = Shortcut::new(Some(Modifiers::SHIFT | Modifiers::SUPER), Code::Space);
-            if let Err(e) = app.global_shortcut().register(toggle) {
-                log::warn!("Failed to register toggle shortcut: {e}");
-            }
-            if let Err(e) = app.global_shortcut().register(panel) {
-                log::warn!("Failed to register panel shortcut: {e}");
-            }
+            // Widget actions arrive through tickr:// URLs. Install this before
+            // React mounts so cold-launch actions are queued rather than lost.
+            deep_links::setup(app.handle())?;
+
+            // Per-OS defaults; failures are recorded for Settings to surface.
+            shortcuts::register(app.handle());
+
+            apply_panel_vibrancy(app.handle());
 
             Ok(())
         })
@@ -71,6 +86,25 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
+/// Native blur behind the quick panel on macOS. Elsewhere the panel keeps its
+/// CSS `backdrop-blur`, which is the only option available.
+fn apply_panel_vibrancy<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+    #[cfg(target_os = "macos")]
+    if let Some(panel) = app.get_webview_window("panel") {
+        if let Err(e) = window_vibrancy::apply_vibrancy(
+            &panel,
+            window_vibrancy::NSVisualEffectMaterial::HudWindow,
+            Some(window_vibrancy::NSVisualEffectState::Active),
+            Some(16.0),
+        ) {
+            log::warn!("Failed to apply panel vibrancy: {e}");
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    let _ = app;
+}
+
 // `emit_to` is on AppHandle, but our handler only has &AppHandle; bring in trait
 use tauri::Emitter;
-use tauri_plugin_global_shortcut::GlobalShortcutExt;
+use tauri::Manager;

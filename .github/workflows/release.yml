@@ -13,6 +13,12 @@ name: Release Tickr Desktop
 #   `APPLE_SIGNING_IDENTITY=-`. End users must bypass Gatekeeper on first
 #   launch (right-click → Open, or `xattr -cr /Applications/Tickr.app`).
 #   See `docs/install-unsigned.md`.
+#
+#   macOS builds also embed the WidgetKit extension, which has to happen *after*
+#   Tauri produces the .app. That is why macOS bundles only the `app` target here
+#   and the DMG is built afterwards by embed-widget.sh: a DMG made by Tauri would
+#   contain a widget-less app. Consequently the build jobs never publish — they
+#   only produce artifacts — and the `release` job below attaches them.
 
 on:
   push:
@@ -42,11 +48,11 @@ jobs:
           - label: macos-arm64
             os: macos-latest
             rust_target: aarch64-apple-darwin
-            tauri_args: --target aarch64-apple-darwin
+            tauri_args: --bundles app --target aarch64-apple-darwin
           - label: macos-x64
             os: macos-13
             rust_target: x86_64-apple-darwin
-            tauri_args: --target x86_64-apple-darwin
+            tauri_args: --bundles app --target x86_64-apple-darwin
           - label: linux-x64
             os: ubuntu-22.04
             rust_target: x86_64-unknown-linux-gnu
@@ -101,9 +107,17 @@ jobs:
             file \
             wget
 
+      # xcodegen generates the widget's Xcode project. build-widget.sh skips the
+      # widget rather than failing if this is unavailable.
+      - name: Install xcodegen
+        if: runner.os == 'macOS'
+        run: brew install xcodegen
+
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
+      # Builds only. Publishing happens in the `release` job, because the macOS
+      # DMG does not exist until the widget has been embedded below.
       - name: Build Tauri app and bundle installers
         uses: tauri-apps/tauri-action@v0
         env:
@@ -119,22 +133,28 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
         with:
           projectPath: apps/desktop
-          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-          releaseName: ${{ github.ref_type == 'tag' && format('Tickr {0}', github.ref_name) || '' }}
-          releaseBody: |
-            Tickr ${{ github.ref_name }} — desktop installers for macOS, Windows, and Linux.
-
-            **macOS users:** these builds are ad-hoc signed (no Apple Developer ID).
-            On first launch, right-click the app → Open, or run
-            `xattr -cr /Applications/Tickr.app`. See
-            `docs/install-unsigned.md` for details.
-          releaseDraft: true
-          prerelease: false
-          # Only publish the release when a real version tag was pushed.
-          # Manual `workflow_dispatch` runs still produce artifacts but do not
-          # create or update a GitHub Release.
           includeUpdaterJson: false
           args: ${{ matrix.tauri_args }}
+
+      # Embeds TickrWidget.appex, re-signs the app, then builds the DMG and the
+      # .app tarball that Tauri would otherwise have produced.
+      - name: Embed macOS widget and build DMG
+        if: runner.os == 'macOS'
+        env:
+          APPLE_SIGNING_IDENTITY: '-'
+        run: |
+          set -euo pipefail
+          cd apps/desktop/src-tauri
+          APP="target/${{ matrix.rust_target }}/release/bundle/macos/Tickr.app"
+          bash macos-widget/embed-widget.sh "$PWD/$APP" --dmg --optional
+          tar -czf "$(dirname "$APP")/Tickr.app.tar.gz" -C "$(dirname "$APP")" Tickr.app
+
+      - name: Verify embedded widget
+        if: runner.os == 'macOS'
+        run: |
+          cd apps/desktop/src-tauri
+          bash macos-widget/verify-widget.sh \
+            "$PWD/target/${{ matrix.rust_target }}/release/bundle/macos/Tickr.app"
 
       - name: Upload installers as workflow artifacts
         if: always()
@@ -155,3 +175,43 @@ jobs:
             apps/desktop/src-tauri/target/release/bundle/appimage/*.AppImage
             apps/desktop/src-tauri/target/release/bundle/msi/*.msi
             apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+
+  # Only a real version tag publishes. Manual `workflow_dispatch` runs still
+  # produce downloadable artifacts from the build jobs above.
+  release:
+    name: Draft GitHub Release
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: tickr-*
+          merge-multiple: true
+
+      - name: List artifacts
+        run: find artifacts -type f | sort
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Tickr ${{ github.ref_name }}
+          draft: true
+          prerelease: false
+          fail_on_unmatched_files: true
+          body: |
+            Tickr ${{ github.ref_name }} — desktop installers for macOS, Windows, and Linux.
+
+            **macOS users:** these builds are ad-hoc signed (no Apple Developer ID).
+            On first launch, right-click the app → Open, or run
+            `xattr -cr /Applications/Tickr.app`. See
+            `docs/install-unsigned.md` for details.
+
+            The macOS builds include a desktop widget. macOS only offers widgets
+            from apps in `/Applications`, so move Tickr there and launch it once,
+            then right-click the desktop → Edit Widgets. Requires macOS 14 or later.
+          files: artifacts/**

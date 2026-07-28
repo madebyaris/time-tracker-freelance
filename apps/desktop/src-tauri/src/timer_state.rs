@@ -1,10 +1,14 @@
 /*!
- * Live menubar timer driver.
+ * Live tray timer driver.
  *
  * The desktop JS emits `timer://changed` whenever a timer starts or stops.
  * `tray.rs` listens for that event and routes the payload here. While a timer
  * is running we keep a single 1Hz tokio task alive that re-formats the elapsed
- * duration and pushes it to the macOS menubar via `tray.set_title`.
+ * duration and pushes it to the tray.
+ *
+ * Only macOS renders text beside a tray icon, so elsewhere the same string goes
+ * into the tooltip instead — hovering the icon is then the way to read elapsed
+ * time. See `set_tray_label`.
  *
  * Cancellation is idempotent: starting twice in a row aborts the previous
  * task before spawning a new one, so JS HMR / multiple window reloads cannot
@@ -34,23 +38,23 @@ impl TimerState {
         Self::default()
     }
 
-    /// Begin showing the live duration in the menubar title.
+    /// Begin showing the live duration in the tray.
     pub fn start<R: Runtime>(&self, app: &AppHandle<R>, started_at_ms: i64) {
         self.abort();
 
-        // Set the initial title synchronously so the menubar updates the
-        // very first frame instead of waiting one second for the ticker.
-        set_tray_title(app, Some(format_elapsed(elapsed_seconds(started_at_ms))));
+        // Set the initial label synchronously so the tray updates the very
+        // first frame instead of waiting one second for the ticker.
+        set_tray_label(app, Some(&format_elapsed(elapsed_seconds(started_at_ms))));
 
         let app_clone = app.clone();
         let handle = tauri::async_runtime::spawn(async move {
             let mut interval = tokio::time::interval(std::time::Duration::from_secs(1));
-            // skip the first immediate tick — we already set the title above.
+            // skip the first immediate tick — we already set the label above.
             interval.tick().await;
             loop {
                 interval.tick().await;
                 let secs = elapsed_seconds(started_at_ms);
-                set_tray_title(&app_clone, Some(format_elapsed(secs)));
+                set_tray_label(&app_clone, Some(&format_elapsed(secs)));
             }
         });
 
@@ -59,18 +63,18 @@ impl TimerState {
         }
     }
 
-    /// Stop ticking and clear the menubar text back to the icon-only state.
+    /// Stop ticking and clear the tray text back to the icon-only state.
     pub fn stop<R: Runtime>(&self, app: &AppHandle<R>) {
         self.abort();
-        set_tray_title(app, None);
+        set_tray_label(app, None);
     }
 
-    /// Freeze the menubar at the given elapsed seconds, prefixed with `⏸`.
+    /// Freeze the tray at the given elapsed seconds, prefixed with `⏸`.
     /// The user keeps seeing how much time has been captured even while
     /// they're paused, but the number does not advance.
     pub fn pause<R: Runtime>(&self, app: &AppHandle<R>, elapsed_seconds: i64) {
         self.abort();
-        set_tray_title(app, Some(format!("⏸ {}", format_elapsed(elapsed_seconds))));
+        set_tray_label(app, Some(&format!("⏸ {}", format_elapsed(elapsed_seconds))));
     }
 
     fn abort(&self) {
@@ -82,9 +86,27 @@ impl TimerState {
     }
 }
 
-fn set_tray_title<R: Runtime>(app: &AppHandle<R>, text: Option<String>) {
-    if let Some(tray) = app.tray_by_id("main") {
-        let _ = tray.set_title(text.as_deref());
+/// Push the elapsed-time string to wherever the platform can show it.
+///
+/// `set_title` is a no-op on Windows and Linux — those tray icons have no text
+/// slot at all — so the tooltip carries the timer there instead.
+fn set_tray_label<R: Runtime>(app: &AppHandle<R>, text: Option<&str>) {
+    let Some(tray) = app.tray_by_id("main") else {
+        return;
+    };
+
+    #[cfg(target_os = "macos")]
+    {
+        let _ = tray.set_title(text);
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        let tooltip = match text {
+            Some(elapsed) => format!("Tickr — {elapsed}"),
+            None => "Tickr".to_string(),
+        };
+        let _ = tray.set_tooltip(Some(&tooltip));
     }
 }
 

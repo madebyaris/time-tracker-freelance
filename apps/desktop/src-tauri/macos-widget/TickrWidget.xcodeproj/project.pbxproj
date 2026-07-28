@@ -1,0 +1,440 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		077CBF2F7E75C44DAC56967E /* WidgetState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ED465F047499BC2E47F8900 /* WidgetState.swift */; };
+		295B4DAD95A4A020595B4AAD /* TickrIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 831D7155D779F6CA62C949AF /* TickrIntents.swift */; };
+		34474E530D2D98E1C56C2C11 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E6BEB9C4D268B6BC8455974C /* SwiftUI.framework */; };
+		5E1FA16CDB0087CC577B0190 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C4056FACF72AB10A74669AB /* WidgetKit.framework */; };
+		A7AE4FCBA39ECE7AA5B2C1EB /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6A3D5E8A5987889B4D2A29E7 /* AppIntents.framework */; };
+		ACE237B9930500769C8C80E9 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C4056FACF72AB10A74669AB /* WidgetKit.framework */; };
+		D20C546196C96A36A5508A3F /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A009AB0682003AD50353005 /* main.swift */; };
+		E8CBCA44C6F51B86F5E3E8FF /* TickrWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34E2E2976BE6EE775FD402B4 /* TickrWidget.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		01733B4C4553D60B1FBBBB27 /* tickr-widget-refresh */ = {isa = PBXFileReference; includeInIndex = 0; path = "tickr-widget-refresh"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A009AB0682003AD50353005 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		1ED465F047499BC2E47F8900 /* WidgetState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetState.swift; sourceTree = "<group>"; };
+		2C4056FACF72AB10A74669AB /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		34E2E2976BE6EE775FD402B4 /* TickrWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TickrWidget.swift; sourceTree = "<group>"; };
+		5C00E2CAE995B6B4AFB6BDDB /* TickrWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TickrWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		6A3D5E8A5987889B4D2A29E7 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
+		831D7155D779F6CA62C949AF /* TickrIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TickrIntents.swift; sourceTree = "<group>"; };
+		D5B838DC94C2CB19F0563ED4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E6BEB9C4D268B6BC8455974C /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		1107E1D6B74D3B9736EB33F2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A7AE4FCBA39ECE7AA5B2C1EB /* AppIntents.framework in Frameworks */,
+				ACE237B9930500769C8C80E9 /* WidgetKit.framework in Frameworks */,
+				34474E530D2D98E1C56C2C11 /* SwiftUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		97BED4ED048918A1165A120F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5E1FA16CDB0087CC577B0190 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		06261CC5097325D5B69CEAD1 /* Widget */ = {
+			isa = PBXGroup;
+			children = (
+				D5B838DC94C2CB19F0563ED4 /* Info.plist */,
+				831D7155D779F6CA62C949AF /* TickrIntents.swift */,
+				34E2E2976BE6EE775FD402B4 /* TickrWidget.swift */,
+			);
+			path = Widget;
+			sourceTree = "<group>";
+		};
+		0C2758B073E9E1C38C711C7B = {
+			isa = PBXGroup;
+			children = (
+				514326A5BBD5ADA6862116E0 /* Sources */,
+				8E00756A56FE4EECBA7AA6BB /* Frameworks */,
+				E3BAF46D2808E525DDDB3B46 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		514326A5BBD5ADA6862116E0 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				B0DFC9A0788A404C44DA5D2F /* Refresh */,
+				F9817AD1C0E6679ABCAC0870 /* Shared */,
+				06261CC5097325D5B69CEAD1 /* Widget */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		8E00756A56FE4EECBA7AA6BB /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				6A3D5E8A5987889B4D2A29E7 /* AppIntents.framework */,
+				E6BEB9C4D268B6BC8455974C /* SwiftUI.framework */,
+				2C4056FACF72AB10A74669AB /* WidgetKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		B0DFC9A0788A404C44DA5D2F /* Refresh */ = {
+			isa = PBXGroup;
+			children = (
+				0A009AB0682003AD50353005 /* main.swift */,
+			);
+			path = Refresh;
+			sourceTree = "<group>";
+		};
+		E3BAF46D2808E525DDDB3B46 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				01733B4C4553D60B1FBBBB27 /* tickr-widget-refresh */,
+				5C00E2CAE995B6B4AFB6BDDB /* TickrWidget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F9817AD1C0E6679ABCAC0870 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				1ED465F047499BC2E47F8900 /* WidgetState.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3F61299B1DA1F3E959E9521B /* tickr-widget-refresh */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7E5C78C657C3158FDDB321B4 /* Build configuration list for PBXNativeTarget "tickr-widget-refresh" */;
+			buildPhases = (
+				7F027BF9DFDC76F8ED15AF0B /* Sources */,
+				97BED4ED048918A1165A120F /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "tickr-widget-refresh";
+			packageProductDependencies = (
+			);
+			productName = "tickr-widget-refresh";
+			productReference = 01733B4C4553D60B1FBBBB27 /* tickr-widget-refresh */;
+			productType = "com.apple.product-type.tool";
+		};
+		ADFEC5C5C83D6F5B20B0B740 /* TickrWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B52423361F1310ED6F35467D /* Build configuration list for PBXNativeTarget "TickrWidget" */;
+			buildPhases = (
+				B28654591CFF3CDA78A958CC /* Sources */,
+				1107E1D6B74D3B9736EB33F2 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TickrWidget;
+			packageProductDependencies = (
+			);
+			productName = TickrWidget;
+			productReference = 5C00E2CAE995B6B4AFB6BDDB /* TickrWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DED8F9D4D4EF5D65411B2421 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = C04F5F4760A1211005270F7D /* Build configuration list for PBXProject "TickrWidget" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 0C2758B073E9E1C38C711C7B;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E3BAF46D2808E525DDDB3B46 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				ADFEC5C5C83D6F5B20B0B740 /* TickrWidget */,
+				3F61299B1DA1F3E959E9521B /* tickr-widget-refresh */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7F027BF9DFDC76F8ED15AF0B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D20C546196C96A36A5508A3F /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B28654591CFF3CDA78A958CC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				295B4DAD95A4A020595B4AAD /* TickrIntents.swift in Sources */,
+				E8CBCA44C6F51B86F5E3E8FF /* TickrWidget.swift in Sources */,
+				077CBF2F7E75C44DAC56967E /* WidgetState.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		02FE309E446D155975CDECB2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Sources/Widget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.tickr.desktop.TickrWidget;
+				PRODUCT_NAME = TickrWidget;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		30A7ABBC222E2F20E52F29F0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.5.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		83690EB22D394366A86A1943 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.5.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		9EA7681A5D385F8737E1AA4F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "app.tickr.desktop.tickr-widget-refresh";
+				PRODUCT_NAME = "tickr-widget-refresh";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D967C75DB12BB08D02EE1F09 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Sources/Widget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.tickr.desktop.TickrWidget;
+				PRODUCT_NAME = TickrWidget;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		F142A7938DC1064CA43FAB7E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "app.tickr.desktop.tickr-widget-refresh";
+				PRODUCT_NAME = "tickr-widget-refresh";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7E5C78C657C3158FDDB321B4 /* Build configuration list for PBXNativeTarget "tickr-widget-refresh" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F142A7938DC1064CA43FAB7E /* Debug */,
+				9EA7681A5D385F8737E1AA4F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B52423361F1310ED6F35467D /* Build configuration list for PBXNativeTarget "TickrWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				02FE309E446D155975CDECB2 /* Debug */,
+				D967C75DB12BB08D02EE1F09 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C04F5F4760A1211005270F7D /* Build configuration list for PBXProject "TickrWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				83690EB22D394366A86A1943 /* Debug */,
+				30A7ABBC222E2F20E52F29F0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = DED8F9D4D4EF5D65411B2421 /* Project object */;
+}

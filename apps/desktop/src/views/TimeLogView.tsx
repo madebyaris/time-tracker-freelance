@@ -18,7 +18,16 @@ import {
   formatMoney,
   startOfDay,
 } from '@ttf/shared';
-import { History, Trash2, X } from 'lucide-react';
+import {
+  aggregateTotals,
+  formatRevenueByCurrency,
+  matchesBillableFilter,
+  matchesSourceFilter,
+  resolveRange,
+  type BillableFilter,
+  type SourceFilter,
+} from '../lib/reporting';
+import { Download, History, Trash2, X } from 'lucide-react';
 import {
   Clients,
   Projects,
@@ -35,6 +44,7 @@ import {
   encodeEntryTarget,
 } from '../lib/time-entry-target';
 import { getEntryBilling } from '../lib/billing';
+import { exportEntriesCsv } from '../lib/csv';
 import {
   EntryFormFields,
   centsToRateOverride,
@@ -50,9 +60,6 @@ const rangeOptions: Array<{ value: Range; label: string }> = [
   { value: '90d', label: '90D' },
   { value: 'custom', label: 'Custom' },
 ];
-
-type SourceFilter = 'all' | TimeEntry['source'];
-type BillableFilter = 'all' | 'billable' | 'non_billable';
 
 function pad(value: number): string {
   return String(value).padStart(2, '0');
@@ -121,18 +128,10 @@ export function TimeLogView() {
   const [customFrom, setCustomFrom] = useState(dateInputValue(todayStart - 30 * 86_400_000));
   const [customTo, setCustomTo] = useState(dateInputValue(todayStart));
 
-  const { from, to } = useMemo(() => {
-    if (range === 'custom') {
-      const f = new Date(`${customFrom}T00:00:00`).getTime();
-      const t = new Date(`${customTo}T00:00:00`).getTime() + 86_400_000;
-      return { from: Number.isNaN(f) ? todayStart : f, to: Number.isNaN(t) ? todayStart + 86_400_000 : t };
-    }
-    const days = range === '7d' ? 7 : range === '30d' ? 30 : 90;
-    return {
-      from: todayStart - (days - 1) * 86_400_000,
-      to: todayStart + 86_400_000,
-    };
-  }, [range, customFrom, customTo, todayStart]);
+  const { from, to } = useMemo(
+    () => resolveRange(range, { customFrom, customTo }),
+    [range, customFrom, customTo],
+  );
 
   const [source, setSource] = useState<SourceFilter>('all');
   const [billableFilter, setBillableFilter] = useState<BillableFilter>('all');
@@ -140,6 +139,8 @@ export function TimeLogView() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<EntryFormValue>(emptyForm);
+  const [exportStatus, setExportStatus] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
 
   const entriesQ = useQuery({
     queryKey: ['entries', 'time-log', from, to],
@@ -181,9 +182,8 @@ export function TimeLogView() {
 
   const filtered = useMemo(() => {
     const entries = (entriesQ.data ?? []).filter((entry) => {
-      if (source !== 'all' && entry.source !== source) return false;
-      if (billableFilter === 'billable' && !entry.billable) return false;
-      if (billableFilter === 'non_billable' && entry.billable) return false;
+      if (!matchesSourceFilter(entry, source)) return false;
+      if (!matchesBillableFilter(entry, billableFilter)) return false;
       if (targetFilter && targetFilter !== '__all__') {
         const decoded = decodeEntryTarget(targetFilter);
         if (decoded.project_id && entry.project_id !== decoded.project_id) return false;
@@ -199,27 +199,10 @@ export function TimeLogView() {
     return entries;
   }, [entriesQ.data, source, billableFilter, targetFilter, projById]);
 
-  const stats = useMemo(() => {
-    let totalSeconds = 0;
-    let billableSeconds = 0;
-    const revenueByCurrency = new Map<string, number>();
-    for (const entry of filtered) {
-      const project = entry.project_id ? projById.get(entry.project_id) ?? null : null;
-      const client = (project?.client_id ? clientById.get(project.client_id) : null) ??
-        (entry.client_id ? clientById.get(entry.client_id) : null);
-      const billing = getEntryBilling(entry, project, client ?? null);
-      const secs = entryDurationSeconds(entry);
-      totalSeconds += secs;
-      if (billing.rate) {
-        billableSeconds += secs;
-        if (billing.currency) {
-          const amt = (secs / 3600) * billing.rate;
-          revenueByCurrency.set(billing.currency, (revenueByCurrency.get(billing.currency) ?? 0) + amt);
-        }
-      }
-    }
-    return { totalSeconds, billableSeconds, revenueByCurrency };
-  }, [filtered, projById, clientById]);
+  const stats = useMemo(
+    () => aggregateTotals(filtered, projById, clientById),
+    [filtered, projById, clientById],
+  );
 
   const editingEntry = filtered.find((entry) => entry.id === editingId) ?? null;
   const editContext = resolveTargetContext(editForm.target, projById, clientById);
@@ -294,6 +277,30 @@ export function TimeLogView() {
     setEditingId(null);
   }
 
+  async function handleExport() {
+    setIsExporting(true);
+    setExportStatus('');
+    try {
+      const decoded =
+        targetFilter && targetFilter !== '__all__' ? decodeEntryTarget(targetFilter) : null;
+      const path = await exportEntriesCsv({
+        from,
+        to,
+        source,
+        billable: billableFilter,
+        target: decoded
+          ? { projectId: decoded.project_id, clientId: decoded.client_id }
+          : null,
+        fileLabel: 'time-log',
+      });
+      setExportStatus(path ? `Exported to ${path}` : '');
+    } catch (error) {
+      setExportStatus(`Export failed: ${(error as Error).message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-5">
       <header className="flex items-end justify-between gap-3">
@@ -305,8 +312,20 @@ export function TimeLogView() {
             Edit time and rates
           </h1>
         </div>
-        <SegmentedControl value={range} onChange={setRange} options={rangeOptions} />
+        <div className="flex items-center gap-2">
+          <SegmentedControl value={range} onChange={setRange} options={rangeOptions} />
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting}>
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            {isExporting ? 'Exporting…' : 'Export'}
+          </Button>
+        </div>
       </header>
+
+      {exportStatus && (
+        <div className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-300">
+          {exportStatus}
+        </div>
+      )}
 
       {range === 'custom' && (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -330,9 +349,9 @@ export function TimeLogView() {
       )}
 
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Tracked" value={formatDuration(stats.totalSeconds, 'hm')} />
+        <Stat label="Tracked" value={formatDuration(stats.seconds, 'hm')} />
         <Stat label="Billable" value={formatDuration(stats.billableSeconds, 'hm')} />
-        <Stat label="Revenue" value={formatRevenue(stats.revenueByCurrency)} />
+        <Stat label="Revenue" value={formatRevenueByCurrency(stats.revenueByCurrency)} />
         <Stat label="Entries" value={String(filtered.length)} />
       </div>
 
@@ -549,19 +568,6 @@ function fmtDate(ts: number): string {
   const d = new Date(ts);
   return `${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · ${d
     .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-}
-
-function formatRevenue(byCurrency: Map<string, number>): string {
-  const entries = [...byCurrency.entries()].sort((a, b) => b[1] - a[1]);
-  if (entries.length === 0) return '—';
-  if (entries.length === 1) {
-    return formatMoney(Math.round(entries[0]![1]), entries[0]![0]);
-  }
-  const head = entries
-    .slice(0, 2)
-    .map(([cur, amt]) => formatMoney(Math.round(amt), cur))
-    .join(' · ');
-  return entries.length > 2 ? `${head} +${entries.length - 2}` : head;
 }
 
 function Stat({ label, value }: { label: string; value: string }) {

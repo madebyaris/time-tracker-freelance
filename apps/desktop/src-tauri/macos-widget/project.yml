@@ -1,0 +1,62 @@
+# Sidecar Xcode project for the Tickr macOS widget.
+#
+# Tauri cannot build an app-extension target, so the .appex is produced here and
+# embedded into the Tauri-built .app afterwards by embed-widget.sh.
+#
+# Code signing is disabled during the build: embed-widget.sh signs the appex
+# ad-hoc with the sandbox entitlements it needs, then re-signs the host app.
+#
+# Deployment target is macOS 14 even though the app supports 11. Desktop widgets
+# and `containerBackground` need 14, and a widget that only appears in
+# Notification Center on older systems is not worth the availability branching.
+# The appex simply doesn't load below 14.
+
+name: TickrWidget
+
+options:
+  bundleIdPrefix: app.tickr.desktop
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    MARKETING_VERSION: "0.5.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    ONLY_ACTIVE_ARCH: "NO"
+    CODE_SIGN_IDENTITY: ""
+    CODE_SIGNING_REQUIRED: "NO"
+    CODE_SIGNING_ALLOWED: "NO"
+    ENABLE_HARDENED_RUNTIME: "NO"
+
+targets:
+  TickrWidget:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Sources/Shared
+      - path: Sources/Widget
+    settings:
+      base:
+        PRODUCT_NAME: TickrWidget
+        PRODUCT_BUNDLE_IDENTIFIER: app.tickr.desktop.TickrWidget
+        INFOPLIST_FILE: Sources/Widget/Info.plist
+        SKIP_INSTALL: "YES"
+    dependencies:
+      - sdk: AppIntents.framework
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+
+  tickr-widget-refresh:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Sources/Refresh
+    settings:
+      base:
+        PRODUCT_NAME: tickr-widget-refresh
+    dependencies:
+      - sdk: WidgetKit.framework
